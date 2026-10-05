@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { HttpError, canEdit, type Tenant } from "@/lib/tenant";
+import { mvpItems } from "@/lib/mvp";
 
 // Todos os dados do cliente passam por aqui. Em modo Supabase, as consultas
 // usam a sessão do usuário (RLS) e sempre filtram por client_id. Em modo local
@@ -41,6 +42,7 @@ function requireEdit(t: Tenant) {
 // ----- conexões com a Pluggy -----
 
 export async function listConnectionIds(t: Tenant): Promise<string[]> {
+  if (t.mode === "mvp") return mvpItems(t.clientSlug);
   if (t.mode === "local") return readJson<string[]>("items.json", []);
   const { data, error } = await t
     .db!.from("pluggy_connections")
@@ -91,6 +93,7 @@ export async function removeConnection(t: Tenant, itemId: string): Promise<void>
 // ----- contas fixas -----
 
 export async function listBills(t: Tenant): Promise<Bill[]> {
+  if (t.mode === "mvp") return [];
   if (t.mode === "local") return readJson<Bill[]>("fixed-bills.json", []);
   const { data, error } = await t
     .db!.from("fixed_bills")
@@ -147,6 +150,7 @@ export async function removeBill(t: Tenant, id: string): Promise<void> {
 // ----- regras de categoria -----
 
 export async function getRules(t: Tenant): Promise<Record<string, string>> {
+  if (t.mode === "mvp") return {};
   if (t.mode === "local") return readJson<Record<string, string>>("category-rules.json", {});
   const { data, error } = await t
     .db!.from("category_rules")

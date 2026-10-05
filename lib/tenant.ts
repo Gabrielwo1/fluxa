@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseConfigured } from "@/lib/supabase/config";
+import { MVP_COOKIE, mvpClientName, mvpConfigured, readSession } from "@/lib/mvp";
 
 export type Role = "owner" | "editor" | "viewer";
 
@@ -9,7 +10,7 @@ export type ClientInfo = { id: string; name: string; slug: string };
 
 // Quem está fazendo a requisição e de qual cliente são os dados que ela enxerga.
 export type Tenant = {
-  mode: "supabase" | "local";
+  mode: "supabase" | "mvp" | "local";
   userId: string | null;
   email: string | null;
   isStaff: boolean;
@@ -33,7 +34,31 @@ export class HttpError extends Error {
 export const ACTIVE_CLIENT_COOKIE = "active_client";
 
 export async function getTenant(): Promise<Tenant> {
+  // 1) sessão do modo MVP (código de acesso vindo do ambiente): somente leitura
+  if (mvpConfigured()) {
+    const session = await readSession((await cookies()).get(MVP_COOKIE)?.value);
+    if (session) {
+      return {
+        mode: "mvp",
+        userId: null,
+        email: null,
+        isStaff: false,
+        role: "viewer",
+        clientId: session.slug,
+        clientSlug: session.slug,
+        clientName: mvpClientName(session.slug),
+        clients: [],
+        db: null,
+      };
+    }
+  }
+
+  // 2) modo local (só desenvolvimento): sem login, sem Supabase e sem MVP
+  //    (ou com LOCAL_CLIENT definido de propósito)
   if (!supabaseConfigured) {
+    if (mvpConfigured() && !process.env.LOCAL_CLIENT) {
+      throw new HttpError(401, "Não autenticado");
+    }
     if (process.env.VERCEL) {
       throw new HttpError(503, "Supabase não configurado neste ambiente");
     }

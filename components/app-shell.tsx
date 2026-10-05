@@ -122,7 +122,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
-    await createClient().auth.signOut();
+    if (me?.mode === "mvp") await fetch("/api/access/logout", { method: "POST" });
+    else await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();
   }
@@ -295,7 +296,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
               </span>
             </div>
-            {me?.mode === "supabase" && (
+            {(me?.mode === "supabase" || me?.mode === "mvp") && (
               <Button
                 variant="outline"
                 size="icon"

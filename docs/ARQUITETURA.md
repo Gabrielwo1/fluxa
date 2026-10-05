@@ -82,6 +82,21 @@ e-mail e senha. Na tela de login, a aba "Código de acesso" é a padrão.
   `NEXT_PUBLIC_`) e `ACCESS_EMAIL_BASE` (uma caixa sua; cada código vira `voce+fx-abcd@dominio`,
   que nunca é usado para enviar e-mail). Migração: `20261005010000_access_codes.sql`.
 
+## Modo MVP (sem banco)
+
+Para testar com um cliente antes de o Supabase estar no ar, o app aceita um **código de acesso
+definido em variáveis de ambiente**. Qualquer texto serve como código, o que é prático e **fraco**:
+use só em teste e troque por um código gerado (ou mais longo) antes de ir adiante.
+
+- `MVP_ACCESS_CODE_<SLUG>` define o código do cliente (vários, separados por vírgula),
+  `MVP_ITEMS_<SLUG>` lista as conexões da Pluggy dele e `SESSION_SECRET` assina o cookie.
+- O login valida o código no servidor (comparação por hash, sem diferença de tempo, ignorando
+  maiúsculas), limita tentativas por IP e abre uma sessão de 7 dias em cookie `httpOnly` assinado.
+- A sessão enxerga **só aquele cliente** e é **somente leitura**: não altera contas fixas, regras
+  nem conexões, e não gera token do widget. Nada disso é gravado (não há banco).
+- Quando o Supabase estiver configurado, os dois modos convivem: o código é testado primeiro
+  contra o ambiente e, se não for dele, contra os códigos gerados (`FLX-...`).
+
 ## Apresentação comercial
 
 A rota pública `/apresentacao` é um conjunto de 13 slides (setas, espaço, toque, tela cheia, "ver

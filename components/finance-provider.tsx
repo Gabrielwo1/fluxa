@@ -81,7 +81,7 @@ export type SegmentTotal = {
 export const FUTURE_MONTHS = 12;
 
 export type Me = {
-  mode: "supabase" | "local";
+  mode: "supabase" | "mvp" | "local";
   email: string | null;
   isStaff: boolean;
   role: "owner" | "editor" | "viewer";
