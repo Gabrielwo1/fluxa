@@ -1,0 +1,4 @@
+.env*
+data
+.claude
+supabase/seed.piloto.sql

@@ -1,0 +1,21 @@
+-- Modelo de seed: nenhum dado real fica versionado.
+-- Dados pessoais do cliente piloto ficam em supabase/seed.piloto.sql (ignorado pelo Git).
+
+-- 1) Crie o seu usuário em Authentication > Users e marque como equipe:
+--
+--   insert into public.staff (user_id)
+--   select id from auth.users where email = 'SEU_EMAIL'
+--   on conflict do nothing;
+
+-- 2) Para cada novo cliente (construção assistida):
+--
+--   insert into public.clients (name, slug, status) values ('Empresa X', 'empresa-x', 'onboarding');
+--
+--   -- usuário do cliente (criado antes em Authentication > Users):
+--   insert into public.memberships (user_id, client_id, role)
+--   select u.id, c.id, 'owner'
+--   from auth.users u, public.clients c
+--   where u.email = 'email-do-cliente@empresa.com.br' and c.slug = 'empresa-x';
+--
+--   -- a conexão com os bancos é registrada pelo painel (botão "Conectar banco"),
+--   -- que grava o item da Pluggy em public.pluggy_connections.
