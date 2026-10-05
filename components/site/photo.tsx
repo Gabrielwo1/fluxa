@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-// foto do banco de imagens, ilustrativa (nunca apresentada como equipe ou cliente)
+// Foto do banco de imagens, ilustrativa (nunca apresentada como equipe ou cliente).
+// Se o arquivo não existir no deploy, mostra um fundo em degradê em vez de imagem quebrada.
 export function Photo({
   src,
   alt,
@@ -19,19 +23,35 @@ export function Photo({
   priority?: boolean;
   sizes?: string;
 }) {
+  const [failed, setFailed] = useState(false);
   return (
     <figure
       className={cn("relative overflow-hidden rounded-3xl bg-muted", className)}
+      // o erro pode acontecer antes de a hidratação ligar o onError
+      ref={(node) => {
+        const img = node?.querySelector("img");
+        if (img && img.complete && img.naturalWidth === 0) {
+          queueMicrotask(() => setFailed(true));
+        }
+      }}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        priority={priority}
-        sizes={sizes}
-        className="object-cover"
-        style={{ objectPosition: position }}
-      />
+      {failed ? (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(135deg,color-mix(in_oklch,var(--primary)_35%,transparent),var(--muted)_55%,color-mix(in_oklch,var(--primary)_15%,transparent))]"
+        />
+      ) : (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          priority={priority}
+          sizes={sizes}
+          className="object-cover"
+          style={{ objectPosition: position }}
+          onError={() => setFailed(true)}
+        />
+      )}
       <div
         aria-hidden
         className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
