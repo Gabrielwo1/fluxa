@@ -14,7 +14,8 @@ Pluggy, a mesma tabela passa a guardar os itens dos conectores oficiais, sem mud
 ```
 auth.users ──< memberships >── clients ──< pluggy_connections   (1 item Pluggy = 1 cliente)
      │                            ├──< fixed_bills
-   staff                          └──< category_rules
+   staff                          ├──< category_rules
+                                  └──< access_codes (1 código = 1 usuário do Auth)
 leads (página de anúncios, só inserção anônima)
 ```
 
@@ -26,6 +27,7 @@ leads (página de anúncios, só inserção anônima)
 | `pluggy_connections` | Itens da Pluggy do cliente. `pluggy_item_id` é único no banco inteiro: um item nunca pertence a dois clientes |
 | `fixed_bills` | Contas fixas do cliente |
 | `category_rules` | Regras "este estabelecimento sempre vai nesta categoria", por cliente |
+| `access_codes` | Metadados dos códigos de acesso de cada cliente (o código em si não é salvo) |
 | `leads` | Contatos da página `/lp`. Visitante anônimo só insere; só a equipe lê |
 
 ## Quem pode o quê (RLS)
@@ -60,6 +62,31 @@ Navegador ──(cookie de sessão Supabase)──> Vercel (Next.js)
 - Sem as variáveis do Supabase, o app roda em **modo local** (arquivos em `data/`), só para
   desenvolvimento. Na Vercel, sem Supabase, as APIs respondem 503 de propósito.
 
+## Acesso por código
+
+Cada pessoa do cliente pode entrar com um **código pessoal** (`FLX-XXXX-XXXX-XXXX-XXXX`) em vez de
+e-mail e senha. Na tela de login, a aba "Código de acesso" é a padrão.
+
+- **Como funciona por trás:** cada código é um usuário do Supabase Auth cuja senha é o código,
+  vinculado ao cliente em `memberships` (com papel `viewer`, `editor` ou `owner`). Logo, o
+  isolamento por RLS vale igual para quem entra por código ou por e-mail.
+- **Formato:** `FLX` + 4 caracteres públicos (identificam o acesso) + 12 secretos (~59 bits), em um
+  alfabeto sem `0/O/1/I/L`. O código nunca é salvo: o Auth guarda só o hash da senha, e a tabela
+  `access_codes` guarda apenas metadados (rótulo, papel, validade, último uso).
+- **Gerar e revogar:** a equipe usa a página **Acessos** (menu, só para a equipe). O código aparece
+  uma única vez. Revogar apaga o usuário: o acesso cai na hora e o vínculo sai em cascata.
+- **Validade opcional** (7 dias a 1 ano) e último uso registrado.
+- **Proteções no login:** resposta única para código inválido, expirado ou revogado; limite de
+  8 tentativas por IP em 10 minutos (por instância) além do limite do próprio Supabase Auth.
+- **Requer no servidor:** `SUPABASE_SERVICE_ROLE_KEY` (ignora o RLS; só no servidor, nunca com
+  `NEXT_PUBLIC_`) e `ACCESS_EMAIL_BASE` (uma caixa sua; cada código vira `voce+fx-abcd@dominio`,
+  que nunca é usado para enviar e-mail). Migração: `20261005010000_access_codes.sql`.
+
+## Apresentação comercial
+
+A rota pública `/apresentacao` é um conjunto de 13 slides (setas, espaço, toque, tela cheia, "ver
+todos" e PDF pelo botão de impressora). O slide atual fica no hash da URL (`/apresentacao#6`).
+
 ## Onboarding assistido de um cliente
 
 1. `insert into clients` (status `onboarding`).
@@ -71,9 +98,9 @@ Navegador ──(cookie de sessão Supabase)──> Vercel (Next.js)
 
 ## Deploy (Vercel + Supabase)
 
-1. Supabase: rodar `supabase/migrations/20261005000000_multitenant_core.sql` no SQL Editor.
+1. Supabase: rodar no SQL Editor, em ordem, `supabase/migrations/20261005000000_multitenant_core.sql` e `20261005010000_access_codes.sql`.
    Depois rodar o seu seed local (`supabase/seed.piloto.sql`) e o trecho de `staff` de `supabase/seed.sql`.
-2. Vercel: importar o repositório e definir as variáveis de `.env.example` (Settings > Environment Variables).
+2. Vercel: definir as variáveis de `.env.example` (Settings > Environment Variables). `SUPABASE_SERVICE_ROLE_KEY` e `PLUGGY_CLIENT_SECRET` só como variáveis de servidor.
 3. Supabase > Authentication > URL Configuration: incluir o domínio da Vercel em Site URL / Redirect URLs.
 4. A região das funções está em `gru1` (São Paulo) em `vercel.json`, perto do Supabase `sa-east-1`.
 

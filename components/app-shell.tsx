@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import {
   ArrowLeftRight,
   LayoutDashboard,
+  KeyRound,
   Leaf,
   LogOut,
   Moon,
@@ -126,6 +127,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.refresh();
   }
 
+  // "Acessos" só aparece para a equipe, com o Supabase configurado
+  const nav =
+    me?.isStaff && me.mode === "supabase"
+      ? [...NAV, { href: "/acessos", label: "Acessos", Icon: KeyRound }]
+      : NAV;
+
   const isActive = (href: string) =>
     href === "/"
       ? pathname === "/"
@@ -156,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV.map(({ href, label, Icon }) => (
+          {nav.map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
@@ -324,7 +331,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* navegação inferior no mobile */}
       <nav className="fixed inset-x-3 bottom-3 z-30 flex justify-around rounded-2xl border bg-card/95 p-1.5 shadow-lg backdrop-blur lg:hidden">
-        {NAV.map(({ href, label, Icon }) => (
+        {nav.map(({ href, label, Icon }) => (
           <Link
             key={href}
             href={href}

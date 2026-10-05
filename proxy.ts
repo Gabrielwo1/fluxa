@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/supabase/config";
 
-// Rotas públicas: página de anúncios, login e o envio do formulário de contato.
-const PUBLIC = ["/lp", "/login", "/api/leads"];
+// Rotas públicas: página de anúncios, apresentação, login (e-mail ou código) e o formulário de contato.
+const PUBLIC = ["/lp", "/login", "/apresentacao", "/api/leads", "/api/access/login"];
 
 const isPublic = (path: string) =>
   PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
@@ -27,8 +27,14 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const logged = Boolean(data?.claims);
+  // se o Supabase estiver fora do ar, trata como não logado em vez de derrubar a página
+  let logged = false;
+  try {
+    const { data } = await supabase.auth.getClaims();
+    logged = Boolean(data?.claims);
+  } catch {
+    logged = false;
+  }
   const path = request.nextUrl.pathname;
 
   if (!logged && !isPublic(path)) {

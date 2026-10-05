@@ -551,6 +551,10 @@ export function SiteFooter() {
           </p>
         </div>
         <div className="text-sm text-muted-foreground md:text-right">
+          <a href="/apresentacao" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Apresentação
+          </a>
+          <span aria-hidden> · </span>
           <a href="/lp/privacidade" className="font-medium text-foreground underline-offset-4 hover:underline">
             Política de privacidade
           </a>

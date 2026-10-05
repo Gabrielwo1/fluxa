@@ -14,6 +14,7 @@ const LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#seguranca", label: "Segurança" },
   { href: "#faq", label: "Perguntas" },
+  { href: "/apresentacao", label: "Apresentação" },
 ];
 
 const noop = () => () => {};
