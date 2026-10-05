@@ -4,7 +4,19 @@
     {
       "name": "appfinance-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "appfinance-motta",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:motta"
+      ],
       "port": 3000
     }
   ]

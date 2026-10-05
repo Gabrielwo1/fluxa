@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { route } from "@/lib/api";
 import { HttpError, canEdit, getTenant } from "@/lib/tenant";
 import { addConnection, listConnectionIds, removeConnection } from "@/lib/store";
-import { pluggyFetch } from "@/lib/pluggy";
+import { pluggyFor } from "@/lib/pluggy-client";
 
 type PluggyItem = {
   id: string;
@@ -23,7 +23,7 @@ export const POST = route(async (req) => {
   const { id } = await req.json();
   if (!id || typeof id !== "string") throw new HttpError(400, "id obrigatório");
 
-  const item = await pluggyFetch<PluggyItem>(`/items/${encodeURIComponent(id)}`);
+  const item = await pluggyFor(t).get<PluggyItem>(`/items/${encodeURIComponent(id)}`);
   if (!t.isStaff && item.clientUserId !== t.clientId) {
     throw new HttpError(403, "Esta conexão não foi criada para o seu cliente");
   }

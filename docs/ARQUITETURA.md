@@ -118,3 +118,15 @@ todos" e PDF pelo botão de impressora). O slide atual fica no hash da URL (`/ap
 - Cache das transações no Supabase (hoje cada abertura consulta 12 meses na Pluggy).
 - `audit_log` por cliente para registrar o que foi ajustado na construção assistida.
 - Tela de administração para criar cliente e usuário sem SQL.
+
+## Aplicação da Pluggy por cliente (opcional)
+
+Por padrão, todos os clientes usam a aplicação da Pluggy da Fluxa (`PLUGGY_CLIENT_ID` /
+`PLUGGY_CLIENT_SECRET`). Se um cliente conectou os bancos na própria conta do Pluggy Dashboard, os
+itens existem na aplicação dele, e só as credenciais dela conseguem lê-los. Nesse caso defina, só
+como variáveis de servidor, `PLUGGY_CLIENT_ID_<SLUG>` e `PLUGGY_CLIENT_SECRET_<SLUG>` (slug em
+maiúsculas, ex.: `MOTTA`). O painel escolhe as credenciais pelo cliente atual, inclusive ao gerar o
+token do widget, de modo que novas conexões nascem na aplicação certa.
+
+Para ver um cliente localmente sem o Supabase: `npm run dev:motta` (usa `data/clients/motta/` e as
+credenciais `*_MOTTA`).

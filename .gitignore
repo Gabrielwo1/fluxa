@@ -44,8 +44,8 @@ next-env.d.ts
 # conexões locais da Pluggy
 /data
 
-# dados pessoais do cliente piloto
-/supabase/seed.piloto.sql
+# dados de clientes (seeds por cliente ficam só na sua máquina)
+/supabase/seed.*.sql
 
 # vercel
 .vercel

@@ -15,6 +15,7 @@ export type Tenant = {
   isStaff: boolean;
   role: Role;
   clientId: string;
+  clientSlug: string;
   clientName: string;
   clients: ClientInfo[];
   db: SupabaseClient | null;
@@ -36,14 +37,19 @@ export async function getTenant(): Promise<Tenant> {
     if (process.env.VERCEL) {
       throw new HttpError(503, "Supabase não configurado neste ambiente");
     }
+    // LOCAL_CLIENT=motta roda o modo local com os dados e as credenciais desse cliente
+    const slug = process.env.LOCAL_CLIENT || "local";
     return {
       mode: "local",
       userId: null,
       email: null,
       isStaff: true,
       role: "owner",
-      clientId: "local",
-      clientName: "Modo local",
+      clientId: slug,
+      clientSlug: slug,
+      clientName: process.env.LOCAL_CLIENT
+        ? slug.charAt(0).toUpperCase() + slug.slice(1)
+        : "Modo local",
       clients: [],
       db: null,
     };
@@ -86,6 +92,7 @@ export async function getTenant(): Promise<Tenant> {
     isStaff,
     role,
     clientId: current.id,
+    clientSlug: current.slug,
     clientName: current.name,
     clients: list,
     db,

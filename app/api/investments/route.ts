@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { route } from "@/lib/api";
 import { HttpError, getTenant } from "@/lib/tenant";
 import { assertItemAllowed } from "@/lib/pluggy-guard";
-import { pluggyFetch } from "@/lib/pluggy";
+import { pluggyFor } from "@/lib/pluggy-client";
 
 export const GET = route(async (req) => {
   const t = await getTenant();
@@ -10,6 +10,6 @@ export const GET = route(async (req) => {
   if (!itemId) throw new HttpError(400, "itemId obrigatório");
   await assertItemAllowed(t, itemId);
   return NextResponse.json(
-    await pluggyFetch(`/investments?itemId=${encodeURIComponent(itemId)}`)
+    await pluggyFor(t).get(`/investments?itemId=${encodeURIComponent(itemId)}`)
   );
 });

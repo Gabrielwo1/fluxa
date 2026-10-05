@@ -9,7 +9,10 @@ import { HttpError, canEdit, type Tenant } from "@/lib/tenant";
 
 export type Bill = { id: string; name: string; amount: number; day: number };
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// modo local: LOCAL_CLIENT=motta guarda tudo em data/clients/motta/
+const DATA_DIR = process.env.LOCAL_CLIENT
+  ? path.join(process.cwd(), "data", "clients", process.env.LOCAL_CLIENT)
+  : path.join(process.cwd(), "data");
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {

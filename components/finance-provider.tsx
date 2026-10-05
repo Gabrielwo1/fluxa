@@ -206,13 +206,20 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
+      // uma conexão com problema não derruba as outras, mas o motivo aparece na tela
+      let problem: string | null = null;
       const fetchList = async <T,>(url: string): Promise<T[]> => {
         try {
           const res = await fetch(url);
-          if (!res.ok) return [];
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            problem ??= (body as { error?: string }).error ?? `Erro ${res.status}`;
+            return [];
+          }
           const data = await res.json();
           return (data.results ?? []) as T[];
-        } catch {
+        } catch (e) {
+          problem ??= e instanceof Error ? e.message : String(e);
           return [];
         }
       };
@@ -235,6 +242,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         )
       );
       setRawTxs(txLists.flat().sort((a, b) => b.date.localeCompare(a.date)));
+      if (problem) setError(problem);
     } catch (e) {
       setError(String(e));
     } finally {
