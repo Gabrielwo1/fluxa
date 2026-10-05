@@ -108,9 +108,10 @@ todos" e PDF pelo botão de impressora). O slide atual fica no hash da URL (`/ap
 
 - O conector **MeuPluggy é de uso pessoal** (até 5 conexões por titular). Servir clientes com ele
   é uma etapa de validação; antes de cobrar mensalidade, contratar o plano comercial da Pluggy.
-- As fotos de `public/lp/` são do banco de imagens (licença Freepik) e **não ficam no Git**.
-  Para o deploy, ou o repositório é privado e as fotos são versionadas, ou elas vão para
-  um armazenamento (Supabase Storage / Vercel Blob).
+- As fotos de `public/lp/` são do banco de imagens (Freepik) e estão versionadas neste repositório,
+  que é público, por decisão do dono do projeto. A licença da Freepik não prevê distribuir os
+  arquivos de forma que outras pessoas possam baixá-los; se isso virar um problema, tornar o
+  repositório privado resolve sem mudar mais nada. O crédito à Freepik fica no rodapé da página.
 
 ## Próximos passos sugeridos
 

@@ -44,9 +44,6 @@ next-env.d.ts
 # conexões locais da Pluggy
 /data
 
-# fotos licenciadas (Freepik): não redistribuir em repositório público
-/public/lp/*.jpg
-
 # dados pessoais do cliente piloto
 /supabase/seed.piloto.sql
 
