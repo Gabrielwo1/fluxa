@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/supabase/config";
 import { MVP_COOKIE, mvpConfigured, readSession } from "@/lib/mvp";
+import { safeNext } from "@/lib/routes";
 
 // Rotas públicas: página de anúncios, apresentação, login (e-mail ou código) e o formulário de contato.
 const PUBLIC = [
@@ -59,7 +60,8 @@ export async function proxy(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.search = path === "/" ? "" : `?next=${encodeURIComponent(path)}`;
+    const next = safeNext(path);
+    url.search = next === "/" ? "" : `?next=${encodeURIComponent(next)}`;
     return NextResponse.redirect(url);
   }
 

@@ -2,21 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { KeyRound, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/browser";
 import { formatAccessCodeInput } from "@/lib/access-code-format";
+import { safeNext } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
-// só aceita caminhos internos como destino depois do login
-function safeNext(value: string | null): string {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/";
-}
-
 function CodeForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,8 +36,8 @@ function CodeForm() {
       setBusy(false);
       return;
     }
-    router.replace(safeNext(params.get("next")));
-    router.refresh();
+    // navegação completa: garante que o painel já carregue com a sessão nova
+    window.location.assign(safeNext(params.get("next")));
   }
 
   return (
@@ -79,7 +74,6 @@ function CodeForm() {
 }
 
 function PasswordForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -99,8 +93,7 @@ function PasswordForm() {
       setBusy(false);
       return;
     }
-    router.replace(safeNext(params.get("next")));
-    router.refresh();
+    window.location.assign(safeNext(params.get("next")));
   }
 
   return (
