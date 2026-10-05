@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFinance } from "@/components/finance-provider";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/browser";
 
 const NAV = [
@@ -150,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Leaf size={18} strokeWidth={2.2} />
           </span>
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight">Finanças</span>
+            <span className="text-lg font-bold tracking-tight">{BRAND.name}</span>
           )}
         </Link>
 

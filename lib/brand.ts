@@ -1,6 +1,6 @@
-// Nome de trabalho da marca: trocar aqui atualiza toda a página de anúncios.
+// Nome da marca: trocar aqui atualiza a página de anúncios, o login e o painel.
 export const BRAND = {
-  name: "Lastrio",
+  name: "Fluxa",
   claim: "Sistema financeiro sob medida, conectado aos seus bancos",
 };
 

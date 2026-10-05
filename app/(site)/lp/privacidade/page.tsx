@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { BRAND } from "@/lib/brand";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/sections";
 
 export const metadata: Metadata = {
-  title: `Política de privacidade | ${BRAND.name}`,
+  title: "Política de privacidade",
   robots: { index: false },
 };
 

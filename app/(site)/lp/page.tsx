@@ -16,7 +16,9 @@ import {
 } from "@/components/site/sections";
 
 export const metadata: Metadata = {
-  title: `${BRAND.name} | Sistema financeiro sob medida conectado aos seus bancos`,
+  title: {
+    absolute: `${BRAND.name} | Sistema financeiro sob medida conectado aos seus bancos`,
+  },
   description:
     "Painel financeiro personalizado para empresas, conectado aos bancos via Open Finance. Caixa em tempo real, previsão de meses futuros e rotinas modeladas do seu jeito. Agende um diagnóstico gratuito.",
   openGraph: {

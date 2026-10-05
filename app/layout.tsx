@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finanças",
-  description: "Painel financeiro pessoal via Open Finance (Meu Pluggy)",
+  title: { default: "Fluxa", template: "%s | Fluxa" },
+  description: "Painel financeiro conectado aos seus bancos via Open Finance",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
