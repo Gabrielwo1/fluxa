@@ -8,6 +8,12 @@ export function pluggyFor(t: Tenant) {
 
   // "item não encontrado" costuma ser conexão feita em outra aplicação da Pluggy
   const explain = (e: unknown): never => {
+    if (e instanceof Error && e.message.includes("auth failed: 401") && hasOwnCreds(t.clientSlug)) {
+      throw new Error(
+        `A Pluggy recusou as credenciais PLUGGY_CLIENT_ID_${suffix} / PLUGGY_CLIENT_SECRET_${suffix}. ` +
+          `Confira no Dashboard do cliente (aba Aplicação) se o Client ID e o Client Secret foram copiados inteiros.`
+      );
+    }
     if (e instanceof Error && e.message.includes("404") && !hasOwnCreds(t.clientSlug)) {
       throw new Error(
         `${e.message} | Se este cliente conectou os bancos na conta dele do Pluggy Dashboard, ` +
