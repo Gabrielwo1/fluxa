@@ -1,4 +1,5 @@
 .env*
-data
+# Com barra: só a pasta data/ da raiz (modo local). Sem ela, lib/data/ também ficava de fora.
+/data
 .claude
 supabase/seed.piloto.sql
