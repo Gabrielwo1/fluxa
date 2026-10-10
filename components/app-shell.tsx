@@ -16,6 +16,7 @@ import {
   Plus,
   Receipt,
   RefreshCw,
+  FileText,
   Search,
   Sparkles,
   Sun,
@@ -34,6 +35,8 @@ const NAV = [
   { href: "/contas", label: "Contas", Icon: Wallet },
   { href: "/investimentos", label: "Investimentos", Icon: TrendingUp },
   { href: "/contas-fixas", label: "Contas fixas", Icon: Receipt },
+  { href: "/notas", label: "Notas fiscais", Icon: FileText },
+  { href: "/emitir", label: "Emitir nota", Icon: Sparkles },
 ];
 
 const COLLAPSE_KEY = "sidebar-collapsed";

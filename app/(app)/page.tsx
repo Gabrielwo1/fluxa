@@ -16,6 +16,7 @@ import {
   QuickActions,
   RecentTransactions,
 } from "@/components/dashboard/rail";
+import { NotasCard } from "@/components/dashboard/notas-card";
 
 export default function DashboardPage() {
   const { ready, itemIds } = useFinance();
@@ -42,6 +43,7 @@ export default function DashboardPage() {
       <aside className="grid min-w-0 content-start gap-4 md:grid-cols-2 2xl:grid-cols-1">
         <div className="grid min-w-0 content-start gap-4">
           <AccountsRail />
+          <NotasCard />
           <QuickActions />
         </div>
         <RecentTransactions />

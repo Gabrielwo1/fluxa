@@ -16,5 +16,8 @@ npm run dev
 ```
 
 - `/` painel (exige login quando o Supabase está configurado)
+- `/notas` notas fiscais do cliente, com faturamento e limite anual
+- `/emitir` emissão de NFS-e conversando com a IA
+- `/fiscal` CNPJ do cliente e acesso ao Sistema Nacional da NFS-e
 - `/lp` página de anúncios
 - `/login` entrada de clientes e equipe

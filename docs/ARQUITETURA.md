@@ -128,11 +128,49 @@ todos" e PDF pelo botão de impressora). O slide atual fica no hash da URL (`/ap
   arquivos de forma que outras pessoas possam baixá-los; se isso virar um problema, tornar o
   repositório privado resolve sem mudar mais nada. O crédito à Freepik fica no rodapé da página.
 
+## Módulo fiscal: emissão de NFS-e
+
+Veio do app Nota MEI IA e passou a morar aqui. A parte difícil (assinar o DPS, falar com o
+ambiente nacional, ler o XML, desenhar o PDF) não depende de tela nem de login, então atravessou
+quase sem edição; o que foi reescrito é a casca: dados por cliente e telas no desenho do Fluxa.
+
+```
+lib/nfse/          DPS, assinatura XMLDSIG, API Sefin (mTLS), portal, ADN, DANFSe, importador
+lib/ai/agente.ts   assistente que monta o rascunho (OpenAI, com ferramentas)
+lib/cnae.ts        CNAE do CNPJ -> código de serviço (cTribNac) sugerido
+lib/servicos.ts    lista nacional de serviços (LC 116) com busca por palavra
+lib/cnpj.ts        consulta pública da Receita (BrasilAPI)
+lib/financeiro.ts  faturamento por mês, limite anual do MEI, principais clientes
+lib/nfse-store.ts  dados por cliente (Supabase com RLS, ou arquivo em modo local)
+app/api/nfse/*     rotas: emitente, cnpj, credenciais, chat, emitir, notas, importar, resumo
+```
+
+Tabelas em `supabase/migrations/20261008000000_nfse.sql`: `emitentes`, `emitente_credenciais`,
+`notas_fiscais` e `contadores_dps`. Todas carregam `client_id` e repetem a política do resto do
+painel: equipe vê tudo, `owner`/`editor` escrevem, `viewer` só lê — ou seja, **viewer não emite**.
+Um cliente é uma empresa, então tem um emitente (unique em `client_id`).
+
+Três coisas que valem saber:
+
+- **Quem emite é a pessoa, não a IA.** O assistente só prepara o rascunho; a rota de emissão é a
+  única que fala com o governo, e só roda quando alguém aperta o botão.
+- **O navegador nunca diz de quem é a nota.** O emitente sai do `getTenant()`, igual ao resto do
+  painel. As credenciais de emissão são cifradas (AES-256-GCM, `CREDENCIAIS_CHAVE`) e nunca voltam
+  para o cliente.
+- **A3 não emite ainda.** A chave fica dentro do token e nenhum servidor assina por ela; guardamos
+  o número de série e a emissão recusa com a instrução, antes de reservar número de DPS.
+
+A automação do Emissor Nacional usa Chromium: na Vercel vem do `@sparticuz/chromium`, no
+desenvolvimento usa o Chrome instalado (`lib/nfse/navegador.ts`). O `next.config.ts` inclui à mão
+os arquivos que esses pacotes leem por caminho, senão a função sobe sem eles.
+
 ## Próximos passos sugeridos
 
 - Cache das transações no Supabase (hoje cada abertura consulta 12 meses na Pluggy).
 - `audit_log` por cliente para registrar o que foi ajustado na construção assistida.
 - Tela de administração para criar cliente e usuário sem SQL.
+- Ligar os dois lados: transação recebida vira sugestão de nota, nota emitida entra na previsão de
+  caixa, e o limite do MEI aparece junto do resto do financeiro.
 
 ## Aplicação da Pluggy por cliente (opcional)
 
@@ -145,3 +183,23 @@ token do widget, de modo que novas conexões nascem na aplicação certa.
 
 Para ver um cliente localmente sem o Supabase: `npm run dev:motta` (usa `data/clients/motta/` e as
 credenciais `*_MOTTA`).
+
+## Onde o módulo fiscal parou (08–10/10/2026)
+
+O que está pronto e verificado contra o banco real, com RLS: cadastro do emitente pela Receita,
+credenciais cifradas, nota manual, emissão em simulação, PDF da DANFSe, lista, resumo com o limite
+anual e o isolamento entre clientes (o dono vê os dados dele, um usuário sem vínculo vê zero).
+
+O banco mestre `uuloyfpnksqyrtcabgqh` foi criado agora: as três migrações estão aplicadas e as
+tabelas estão vazias. Para entrar pela primeira vez, `scripts/preparar-acesso.sh` cria o usuário da
+equipe, um cliente e o vínculo.
+
+**Produção ainda roda em modo MVP** (só Pluggy, código de acesso e `SESSION_SECRET` na Vercel).
+As variáveis do Supabase e do fiscal já estão cadastradas lá, mas `NEXT_PUBLIC_*` só entram no
+build: **o modo só muda no próximo deploy**. Antes de publicar, confirmar como fica o acesso de
+quem já usa o painel pelo código MVP.
+
+O que ainda não foi testado de ponta a ponta: emissão de verdade no ambiente nacional (depende de
+certificado A1 ou da senha do Emissor Nacional de um cliente real) e a importação do histórico pelo
+portal, cuja leitura de tela foi escrita como ponto de partida. O A3 continua guardando só o número
+de série, por decisão: a assinatura dele exige um componente instalado na máquina de quem emite.

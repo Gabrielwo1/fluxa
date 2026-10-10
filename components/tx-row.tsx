@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { FileText } from "lucide-react";
 import { CategoryBadge } from "@/lib/icons";
 import { translateCategory } from "@/lib/categories";
 import { brl, splitDescription } from "@/lib/format";
@@ -34,7 +36,7 @@ export function TxRow({
         : null;
 
   return (
-    <div className={cn("flex items-center justify-between gap-3", compact ? "py-2" : "py-3")}>
+    <div className={cn("group/tx flex items-center justify-between gap-3", compact ? "py-2" : "py-3")}>
       <div className="flex min-w-0 items-center gap-3">
         <CategoryBadge category={tx.category} size={compact ? 8 : 9} />
         <div className="min-w-0">
@@ -53,15 +55,30 @@ export function TxRow({
           </p>
         </div>
       </div>
-      <span
-        className={cn(
-          "shrink-0 text-sm font-semibold tabular-nums",
-          f.kind === "income" && "text-good"
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Dinheiro que entrou quase sempre precisa de nota: o atalho leva a frase pronta. */}
+        {f.kind === "income" && (
+          <Link
+            href={`/emitir?texto=${encodeURIComponent(
+              `Recebi ${brl.format(Math.abs(tx.amount))} de ${d.title} em ${new Date(tx.date).toLocaleDateString("pt-BR")}`
+            )}`}
+            title="Emitir nota desta entrada"
+            aria-label="Emitir nota desta entrada"
+            className="rounded-md p-1 text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/tx:opacity-100"
+          >
+            <FileText className="size-3.5" />
+          </Link>
         )}
-      >
-        {minus ? "−" : "+"}
-        {brl.format(Math.abs(tx.amount))}
-      </span>
+        <span
+          className={cn(
+            "text-sm font-semibold tabular-nums",
+            f.kind === "income" && "text-good"
+          )}
+        >
+          {minus ? "−" : "+"}
+          {brl.format(Math.abs(tx.amount))}
+        </span>
+      </div>
     </div>
   );
 }
