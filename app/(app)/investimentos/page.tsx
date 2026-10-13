@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Landmark } from "lucide-react";
 import { useFinance } from "@/components/finance-provider";
 import { EmptyConnect, PageTitle, Panel, PanelHeader } from "@/components/ui-kit";
 import { brl } from "@/lib/format";
+import { PortfolioProjection } from "@/components/invest/portfolio-projection";
+import { Calculator } from "@/components/invest/calculator";
 
 const TYPES: Record<string, string> = {
   FIXED_INCOME: "Renda fixa",
@@ -19,6 +21,7 @@ const TYPES: Record<string, string> = {
 export default function InvestmentsPage() {
   const { ready, itemIds, investments, totalInvested } = useFinance();
 
+  const [now] = useState(() => Date.now());
   const positions = useMemo(
     () =>
       investments
@@ -35,6 +38,13 @@ export default function InvestmentsPage() {
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [positions]);
 
+  // média ponderada da rentabilidade (% do CDI) para pré-preencher a calculadora
+  const avgPctOfCdi = useMemo(() => {
+    const cdiPositions = positions.filter((i) => i.rateType === "CDI" && i.rate);
+    const base = cdiPositions.reduce((s, i) => s + i.balance, 0);
+    return base > 0 ? cdiPositions.reduce((s, i) => s + (i.rate as number) * i.balance, 0) / base : 100;
+  }, [positions]);
+
   if (!ready) return null;
   if (itemIds.length === 0) return <EmptyConnect />;
 
@@ -47,7 +57,7 @@ export default function InvestmentsPage() {
       <div className="mb-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <Panel>
           <p className="text-sm text-muted-foreground">Total investido</p>
-          <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight">
+          <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
             {brl.format(totalInvested)}
           </p>
           <div className="mt-5 space-y-3">
@@ -91,6 +101,10 @@ export default function InvestmentsPage() {
                       <p className="truncate text-sm font-medium">{inv.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {TYPES[inv.type] ?? inv.type}
+                        {inv.rate ? ` · ${inv.rate}% ${inv.rateType ?? ""}` : ""}
+                        {inv.dueDate
+                          ? ` · vence ${new Date(inv.dueDate).toLocaleDateString("pt-BR", { timeZone: "UTC" })}`
+                          : ""}
                       </p>
                     </div>
                   </div>
@@ -103,6 +117,13 @@ export default function InvestmentsPage() {
           )}
         </Panel>
       </div>
+
+      {positions.length > 0 && <PortfolioProjection positions={positions} now={now} />}
+      <Calculator
+        portfolioValue={totalInvested}
+        portfolioPctOfCdi={avgPctOfCdi}
+        now={now}
+      />
     </>
   );
 }

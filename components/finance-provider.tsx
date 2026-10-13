@@ -49,6 +49,15 @@ export type Investment = {
   name: string;
   type: string;
   balance: number;
+  // detalhes da Pluggy usados na projeção; podem faltar conforme o banco
+  subtype?: string | null;
+  rate?: number | null;
+  rateType?: string | null;
+  amount?: number | null;
+  amountOriginal?: number | null;
+  purchaseDate?: string | null;
+  dueDate?: string | null;
+  taxExempt?: boolean | null;
 };
 
 export type MonthAgg = {
