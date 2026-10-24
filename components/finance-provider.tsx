@@ -42,7 +42,8 @@ export type Tx = {
   originalCategory?: string | null;
 };
 
-export type Bill = { id: string; name: string; amount: number; day: number };
+export type BillKind = "out" | "in";
+export type Bill = { id: string; name: string; amount: number; day: number; kind: BillKind };
 
 export type Investment = {
   id: string;
@@ -159,7 +160,7 @@ type Finance = {
   startSandbox: () => Promise<void>;
   sandboxStatus: string | null;
   removeItem: (itemId: string) => Promise<void>;
-  addBill: (name: string, amount: number, day: number) => Promise<void>;
+  addBill: (name: string, amount: number, day: number, kind?: BillKind) => Promise<void>;
   removeBill: (id: string) => Promise<void>;
 };
 
@@ -349,12 +350,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   }, [addItem]);
 
   const addBill = useCallback(
-    async (name: string, amount: number, day: number) => {
+    async (name: string, amount: number, day: number, kind: BillKind = "out") => {
       try {
         const data = await send<{ bills: Bill[] }>("/api/fixed-bills", "POST", {
           name,
           amount,
           day,
+          kind,
         });
         setBills(data.bills ?? []);
       } catch (e) {
@@ -426,7 +428,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     (s, i) => s + (i.balance > 0 ? i.balance : 0),
     0
   );
-  const fixedTotal = bills.reduce((s, b) => s + b.amount, 0);
+  // só as saídas entram na previsão; as entradas de clientes são um controle à parte
+  const fixedTotal = bills.reduce((s, b) => s + (b.kind === "in" ? 0 : b.amount), 0);
 
   const firstKey = useMemo(() => {
     const floor = shiftMonth(currentKey, -11);

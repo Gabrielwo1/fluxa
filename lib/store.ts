@@ -8,7 +8,9 @@ import { mvpItems } from "@/lib/mvp";
 // usam a sessão do usuário (RLS) e sempre filtram por client_id. Em modo local
 // (só desenvolvimento), usa arquivos em data/.
 
-export type Bill = { id: string; name: string; amount: number; day: number };
+// "out": conta fixa (saída); "in": cobrança ou entrada mensal de um cliente
+export type BillKind = "out" | "in";
+export type Bill = { id: string; name: string; amount: number; day: number; kind: BillKind };
 
 // modo local: LOCAL_CLIENT=motta guarda tudo em data/clients/motta/
 const DATA_DIR = process.env.LOCAL_CLIENT
@@ -94,10 +96,14 @@ export async function removeConnection(t: Tenant, itemId: string): Promise<void>
 
 export async function listBills(t: Tenant): Promise<Bill[]> {
   if (t.mode === "mvp") return [];
-  if (t.mode === "local") return readJson<Bill[]>("fixed-bills.json", []);
+  if (t.mode === "local") {
+    const saved = await readJson<Partial<Bill>[]>("fixed-bills.json", []);
+    return saved.map((b) => ({ ...b, kind: b.kind === "in" ? "in" : "out" }) as Bill);
+  }
+  // select("*"): funciona também antes de a coluna "kind" existir no banco
   const { data, error } = await t
     .db!.from("fixed_bills")
-    .select("id, name, amount, day")
+    .select("*")
     .eq("client_id", t.clientId)
     .eq("active", true)
     .order("sort_order")
@@ -108,18 +114,19 @@ export async function listBills(t: Tenant): Promise<Bill[]> {
     name: b.name as string,
     amount: Number(b.amount),
     day: Number(b.day),
+    kind: b.kind === "in" ? "in" : "out",
   }));
 }
 
 export async function addBill(
   t: Tenant,
-  input: { name: string; amount: number; day: number }
+  input: { name: string; amount: number; day: number; kind?: BillKind }
 ): Promise<void> {
   requireEdit(t);
   const day = Math.min(31, Math.max(1, Math.round(input.day) || 1));
   if (t.mode === "local") {
     const bills = await readJson<Bill[]>("fixed-bills.json", []);
-    bills.push({ id: randomUUID(), name: input.name, amount: input.amount, day });
+    bills.push({ id: randomUUID(), name: input.name, amount: input.amount, day, kind: input.kind ?? "out" });
     await writeJson("fixed-bills.json", bills);
     return;
   }
@@ -128,6 +135,8 @@ export async function addBill(
     name: input.name,
     amount: input.amount,
     day,
+    // só manda "kind" para entradas: saídas seguem funcionando mesmo sem a coluna nova
+    ...(input.kind === "in" ? { kind: "in" } : {}),
   });
   fail(error);
 }

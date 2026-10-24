@@ -10,12 +10,17 @@ export const GET = route(async () => {
 
 export const POST = route(async (req) => {
   const t = await getTenant();
-  const { name, amount, day } = await req.json();
+  const { name, amount, day, kind } = await req.json();
   const value = Number(amount);
   if (!name || typeof name !== "string" || !(value > 0)) {
     throw new HttpError(400, "name e amount obrigatórios");
   }
-  await addBill(t, { name: name.trim().slice(0, 160), amount: value, day: Number(day) });
+  await addBill(t, {
+    name: name.trim().slice(0, 160),
+    amount: value,
+    day: Number(day),
+    kind: kind === "in" ? "in" : "out",
+  });
   return NextResponse.json({ bills: await listBills(t) });
 });
 
