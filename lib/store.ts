@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { HttpError, canEdit, type Tenant } from "@/lib/tenant";
+import { get as blobGet, put as blobPut } from "@vercel/blob";
 import { mvpItems } from "@/lib/mvp";
 
 // Todos os dados do cliente passam por aqui. Em modo Supabase, as consultas
@@ -94,8 +95,36 @@ export async function removeConnection(t: Tenant, itemId: string): Promise<void>
 
 // ----- contas fixas -----
 
+// No modo MVP não há banco: as contas fixas e as entradas de clientes ficam num arquivo
+// privado por cliente no Vercel Blob. É só o que o acesso por código pode editar.
+const mvpBillsFile = (t: Tenant) => `mvp/${t.clientSlug}/fixed-bills.json`;
+
+async function readMvpBills(t: Tenant): Promise<Bill[]> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return [];
+  const file = await blobGet(mvpBillsFile(t), { access: "private", useCache: false });
+  if (!file || file.statusCode !== 200) return [];
+  try {
+    const saved = JSON.parse(await new Response(file.stream).text()) as Partial<Bill>[];
+    return saved.map((b) => ({ ...b, kind: b.kind === "in" ? "in" : "out" }) as Bill);
+  } catch {
+    return [];
+  }
+}
+
+async function writeMvpBills(t: Tenant, bills: Bill[]): Promise<void> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new HttpError(503, "O armazenamento das contas não está configurado neste ambiente.");
+  }
+  await blobPut(mvpBillsFile(t), JSON.stringify(bills), {
+    access: "private",
+    allowOverwrite: true,
+    addRandomSuffix: false,
+    contentType: "application/json",
+  });
+}
+
 export async function listBills(t: Tenant): Promise<Bill[]> {
-  if (t.mode === "mvp") return [];
+  if (t.mode === "mvp") return readMvpBills(t);
   if (t.mode === "local") {
     const saved = await readJson<Partial<Bill>[]>("fixed-bills.json", []);
     return saved.map((b) => ({ ...b, kind: b.kind === "in" ? "in" : "out" }) as Bill);
@@ -122,8 +151,14 @@ export async function addBill(
   t: Tenant,
   input: { name: string; amount: number; day: number; kind?: BillKind }
 ): Promise<void> {
-  requireEdit(t);
   const day = Math.min(31, Math.max(1, Math.round(input.day) || 1));
+  if (t.mode === "mvp") {
+    const bills = await readMvpBills(t);
+    bills.push({ id: randomUUID(), name: input.name, amount: input.amount, day, kind: input.kind ?? "out" });
+    await writeMvpBills(t, bills);
+    return;
+  }
+  requireEdit(t);
   if (t.mode === "local") {
     const bills = await readJson<Bill[]>("fixed-bills.json", []);
     bills.push({ id: randomUUID(), name: input.name, amount: input.amount, day, kind: input.kind ?? "out" });
@@ -142,6 +177,10 @@ export async function addBill(
 }
 
 export async function removeBill(t: Tenant, id: string): Promise<void> {
+  if (t.mode === "mvp") {
+    await writeMvpBills(t, (await readMvpBills(t)).filter((b) => b.id !== id));
+    return;
+  }
   requireEdit(t);
   if (t.mode === "local") {
     const bills = await readJson<Bill[]>("fixed-bills.json", []);
