@@ -83,7 +83,7 @@ export const paymentSchema = z.object({
 export const saleSchema = z.object({
   customer_id: z.uuid().nullable().default(null),
   issue_date: date,
-  items: z.array(saleItem).min(1, "Adicione pelo menos um item."),
+  items: z.array(saleItem).min(1, "Adicione pelo menos um item.").max(200, "No máximo 200 itens por venda."),
   discount: money("o desconto").default(0),
   notes: text(2000),
   payment_method: text(40),
@@ -103,7 +103,7 @@ const purchaseItem = z.object({
 export const purchaseSchema = z.object({
   supplier_id: z.uuid().nullable().default(null),
   issue_date: date,
-  items: z.array(purchaseItem).min(1, "Adicione pelo menos um item."),
+  items: z.array(purchaseItem).min(1, "Adicione pelo menos um item.").max(200, "No máximo 200 itens por compra."),
   discount: money("o desconto").default(0),
   notes: text(2000),
   payment_method: text(40),
