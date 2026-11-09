@@ -9,6 +9,7 @@ const PUBLIC = [
   "/lp",
   "/login",
   "/apresentacao",
+  "/proposta",
   "/api/leads",
   "/api/access/login",
   "/api/access/logout",
