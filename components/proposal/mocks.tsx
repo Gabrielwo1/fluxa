@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 function Frame({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("w-full overflow-hidden rounded-3xl border bg-card shadow-[0_8px_30px_rgb(0_0_0/0.06)]", className)} aria-hidden>
-      <div className="flex items-center gap-1.5 border-b bg-muted/60 px-4 py-2.5">
+      <div className="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-2">
         <span className="h-2 w-2 rounded-full bg-bad/60" />
         <span className="h-2 w-2 rounded-full bg-[var(--c-fixed)]/60" />
         <span className="h-2 w-2 rounded-full bg-good/60" />
         <span className="ml-2 text-xs font-medium text-muted-foreground">{title}</span>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="p-3">{children}</div>
     </div>
   );
 }
@@ -34,8 +34,8 @@ const Tag = ({ tone, children }: { tone: "good" | "bad" | "warn" | "info"; child
 
 function Row({ icon, title, sub, right, tag }: { icon?: React.ReactNode; title: string; sub?: string; right?: string; tag?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 py-2.5">
-      {icon && <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20">{icon}</span>}
+    <div className="flex items-center gap-3 py-1.5">
+      {icon && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20">{icon}</span>}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{title}</p>
         {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
@@ -49,9 +49,9 @@ function Row({ icon, title, sub, right, tag }: { icon?: React.ReactNode; title: 
 }
 
 const Kpi = ({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) => (
-  <div className="rounded-2xl border bg-background p-3">
+  <div className="rounded-2xl border bg-background px-3 py-2">
     <p className="text-[11px] text-muted-foreground">{label}</p>
-    <p className={cn("mt-0.5 text-lg font-bold tabular-nums", tone === "good" && "text-good", tone === "bad" && "text-bad")}>{value}</p>
+    <p className={cn("text-base font-bold tabular-nums", tone === "good" && "text-good", tone === "bad" && "text-bad")}>{value}</p>
   </div>
 );
 
@@ -65,7 +65,7 @@ export function MockDashboard() {
         <Kpi label="A receber" value="R$ 12.750" />
         <Kpi label="Em atraso" value="R$ 1.690" tone="bad" />
       </div>
-      <div className="mt-3 flex h-20 items-end gap-2 rounded-2xl border bg-background p-3">
+      <div className="mt-2 flex h-16 items-end gap-2 rounded-2xl border bg-background p-3">
         {bars.map((h, i) => (
           <div key={i} className="flex-1 rounded-t-md bg-[var(--c-total)]" style={{ height: `${h}%`, opacity: i === bars.length - 1 ? 1 : 0.55 }} />
         ))}
@@ -145,7 +145,7 @@ export function MockCashflow() {
         <Kpi label="Vai entrar" value="R$ 4,9 mil" tone="good" />
         <Kpi label="Vai sair" value="R$ 2,1 mil" />
       </div>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="mt-3 h-28 w-full rounded-2xl border bg-background">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="mt-2 h-24 w-full rounded-2xl border bg-background">
         <path d={`${path}L100,100L0,100Z`} fill="var(--c-income)" fillOpacity={0.15} />
         <path d={path} fill="none" stroke="var(--c-income)" strokeWidth={2.2} vectorEffect="non-scaling-stroke" />
       </svg>

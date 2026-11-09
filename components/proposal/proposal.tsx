@@ -90,13 +90,13 @@ export function Proposal({ slides }: { slides: ProposalSlide[] }) {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background">
-      <header className="flex items-center gap-3 px-4 py-3 md:px-8">
+      <header className="flex items-center gap-3 px-4 py-2 md:px-8">
         <BrandMark />
         <div className="ml-auto flex items-center gap-2">
           <span className="mr-1 text-xs font-medium tabular-nums text-muted-foreground" aria-live="polite">
             {index + 1} / {total}
           </span>
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-card" onClick={share} aria-label="Compartilhar esta proposta" title="Compartilhar">
+          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-card" onClick={share} aria-label="Compartilhar esta proposta" title="Compartilhar">
             <Share2 size={16} />
           </Button>
           <ThemeToggle />
@@ -123,13 +123,13 @@ export function Proposal({ slides }: { slides: ProposalSlide[] }) {
             aria-hidden={i !== index}
             className="h-full w-full shrink-0 snap-center snap-always overflow-y-auto overscroll-y-contain"
           >
-            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-center px-5 py-6 md:px-10">{s.node}</div>
+            <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-center px-5 py-3 md:px-10 md:py-4">{s.node}</div>
           </section>
         ))}
       </div>
 
-      <footer className="flex items-center justify-between gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:px-8">
-        <Button variant="outline" className="h-12 w-12 rounded-full bg-card p-0 md:w-auto md:px-5" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Slide anterior">
+      <footer className="flex items-center justify-between gap-3 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 md:px-8">
+        <Button variant="outline" className="h-11 w-11 rounded-full bg-card p-0 md:w-auto md:px-5" onClick={() => go(index - 1)} disabled={index === 0} aria-label="Slide anterior">
           <ChevronLeft size={18} /> <span className="hidden md:inline">Anterior</span>
         </Button>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5" role="tablist" aria-label="Slides">
@@ -145,7 +145,7 @@ export function Proposal({ slides }: { slides: ProposalSlide[] }) {
             />
           ))}
         </div>
-        <Button className="h-12 w-12 rounded-full p-0 font-semibold md:w-auto md:px-6" onClick={() => go(index + 1)} disabled={index === total - 1} aria-label="Próximo slide">
+        <Button className="h-11 w-11 rounded-full p-0 font-semibold md:w-auto md:px-6" onClick={() => go(index + 1)} disabled={index === total - 1} aria-label="Próximo slide">
           <span className="hidden md:inline">Próximo</span> <ChevronRight size={18} />
         </Button>
       </footer>
