@@ -11,29 +11,9 @@ import {
 } from "@/lib/erp/schemas";
 import type { Account, Category, Recurring, Title } from "@/lib/erp/types";
 
-// ---------- datas e parcelas ----------
+import { addMonths, splitAmount } from "@/lib/erp/dates";
 
-export function addDays(iso: string, days: number): string {
-  const d = new Date(`${iso}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-export function addMonths(iso: string, months: number): string {
-  const [y, m, day] = iso.split("-").map(Number);
-  const target = new Date(Date.UTC(y, m - 1 + months, 1, 12));
-  const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0, 12)).getUTCDate();
-  target.setUTCDate(Math.min(day, last));
-  return target.toISOString().slice(0, 10);
-}
-
-// Divide o valor em parcelas iguais; os centavos que sobram vão para a primeira.
-export function splitAmount(total: number, parts: number): number[] {
-  const cents = Math.round(total * 100);
-  const base = Math.floor(cents / parts);
-  const rest = cents - base * parts;
-  return Array.from({ length: parts }, (_, i) => (base + (i === 0 ? rest : 0)) / 100);
-}
+export { addDays, addMonths, splitAmount } from "@/lib/erp/dates";
 
 // ---------- categorias ----------
 
@@ -431,4 +411,58 @@ export async function generateRecurring(tenant: string, month = thisMonth()): Pr
     }
     return { created };
   });
+}
+
+// ---------- fluxo de caixa projetado ----------
+
+export type CashflowDay = { date: string; in: number; out: number; balance: number };
+export type Cashflow = {
+  days: number;
+  opening: number;
+  overdue_in: number;
+  overdue_out: number;
+  total_in: number;
+  total_out: number;
+  closing: number;
+  lowest: { date: string; balance: number };
+  series: CashflowDay[];
+};
+
+// Parte do saldo de hoje e soma o que vence cada dia (entradas e saídas em aberto).
+// O que já venceu e continua em aberto entra no primeiro dia, porque ainda vai ter que acontecer.
+export async function cashflow(tenant: string, days = 60): Promise<Cashflow> {
+  const horizon = Math.min(Math.max(Math.round(days), 7), 365);
+  const opening = (await listAccounts(tenant)).filter((a) => a.active).reduce((s, a) => s + a.balance, 0);
+  const rows = await q<{ date: string; in: number; out: number; late_in: number; late_out: number }>(
+    tenant,
+    `with days as (select d::date as day from generate_series(erp_today(), erp_today() + $2::int, interval '1 day') d)
+     select to_char(days.day, 'YYYY-MM-DD') as date,
+            coalesce(sum(t.amount) filter (where t.direction = 'in'), 0)::float8 as in,
+            coalesce(sum(t.amount) filter (where t.direction = 'out'), 0)::float8 as out,
+            coalesce(sum(t.amount) filter (where t.direction = 'in' and t.due_date < erp_today()), 0)::float8 as late_in,
+            coalesce(sum(t.amount) filter (where t.direction = 'out' and t.due_date < erp_today()), 0)::float8 as late_out
+       from days
+       left join erp_titles t on t.tenant = $1 and t.status = 'open'
+            and greatest(t.due_date, erp_today()) = days.day
+      group by days.day order by days.day`,
+    [horizon]
+  );
+  let balance = opening;
+  let lowest = { date: rows[0]?.date ?? "", balance: opening };
+  const series = rows.map((r) => {
+    balance = Math.round((balance + r.in - r.out) * 100) / 100;
+    if (balance < lowest.balance) lowest = { date: r.date, balance };
+    return { date: r.date, in: r.in, out: r.out, balance };
+  });
+  return {
+    days: horizon,
+    opening,
+    overdue_in: rows.reduce((s, r) => s + r.late_in, 0),
+    overdue_out: rows.reduce((s, r) => s + r.late_out, 0),
+    total_in: series.reduce((s, d) => s + d.in, 0),
+    total_out: series.reduce((s, d) => s + d.out, 0),
+    closing: balance,
+    lowest,
+    series,
+  };
 }

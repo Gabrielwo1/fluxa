@@ -146,6 +146,13 @@ async function main() {
   await assert.rejects(() => fin.cancelTitle(T, sale.titles![0].id), /Não encontrado|não encontrado|pertence/i);
   ok("lançamentos: parcelas mensais, recorrência sem duplicar, dia 31 em fevereiro");
 
+  // --- fluxo de caixa
+  const cf = await fin.cashflow(T, 30);
+  assert.equal(cf.series.length, 31);
+  assert.equal(cf.series[cf.series.length - 1].balance, cf.closing);
+  assert.ok(Math.abs(cf.opening + cf.total_in - cf.total_out - cf.closing) < 0.01, "saldo final = saldo + entradas - saídas");
+  ok("fluxo de caixa fecha a conta (abertura + entradas − saídas = fechamento)");
+
   // --- demo, relatórios, painel
   await demo.loadDemo(T);
   const d = await dash.getDashboard(T);

@@ -66,6 +66,10 @@ export async function getSale(tenant: string, id: string): Promise<Sale> {
     [id]
   );
   sale.titles = await listTitlesByIds(tenant, ids.map((r) => r.id));
+  const live = sale.titles.filter((t) => t.status !== "canceled");
+  sale.received = live.filter((t) => t.status === "paid").reduce((s, t) => s + (t.paid_amount ?? t.amount), 0);
+  sale.open = live.filter((t) => t.status === "open").reduce((s, t) => s + t.amount, 0);
+  sale.overdue = live.filter((t) => t.overdue).reduce((s, t) => s + t.amount, 0);
   return sale;
 }
 

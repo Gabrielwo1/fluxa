@@ -56,7 +56,7 @@ export async function getDashboard(tenant: string): Promise<Dashboard> {
        (select count(*) from erp_products p where p.tenant = $1 and p.active and p.track_stock and ${STOCK} <= p.min_stock)::int as low,
        coalesce((select sum(greatest(${STOCK}, 0) * p.cost_price) from erp_products p where p.tenant = $1 and p.track_stock), 0)::float8 as stock_value,
        (select count(*) from erp_products where tenant = $1 and active)::int as products,
-       (select name <> '' from erp_company where tenant = $1) as company,
+       (select document <> '' from erp_company where tenant = $1) as company,
        (select count(*) from erp_titles where tenant = $1)::int as titles,
        (select count(*) from erp_sales where tenant = $1 and status <> 'canceled')::int as sales_all,
        (select has_demo from erp_company where tenant = $1) as has_demo,

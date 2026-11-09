@@ -2,7 +2,7 @@ import { HttpError } from "@/lib/tenant";
 import { one, tx } from "@/lib/erp/db";
 import { createParty } from "@/lib/erp/services/parties";
 import { createProduct } from "@/lib/erp/services/products";
-import { createPurchase, receivePurchase } from "@/lib/erp/services/purchases";
+import { createPurchase } from "@/lib/erp/services/purchases";
 import { createSale } from "@/lib/erp/services/sales";
 import { createRecurring, createTitles, listAccounts, listCategories, listTitles, payTitle } from "@/lib/erp/services/finance";
 
@@ -69,7 +69,7 @@ export async function loadDemo(tenant: string): Promise<void> {
   for (const [name, sku, kind, category, cost, price, stock, min] of catalog) {
     const p = await createProduct(tenant, {
       name, sku, kind, category, cost_price: cost, sale_price: price, track_stock: kind === "product",
-      min_stock: min, initial_stock: stock, unit: "un",
+      min_stock: min, initial_stock: stock * 4, unit: "un",
     });
     products.push({ id: p.id, name, price, cost, service: kind === "service" });
   }
@@ -93,8 +93,8 @@ export async function loadDemo(tenant: string): Promise<void> {
   // vendas distribuídas pelos últimos ~5 meses, a maioria paga, algumas em aberto e atrasadas
   const sellable = products;
   const saleIds: string[] = [];
-  for (let n = 0; n < 34; n++) {
-    const age = Math.floor((n / 34) * 150 + rand() * 4);
+  for (let n = 0; n < 58; n++) {
+    const age = Math.floor((n / 58) * 150 + rand() * 4);
     const customer = rand() < 0.15 ? null : customers[Math.floor(rand() * 6)];
     const itemCount = 1 + Math.floor(rand() * 3);
     const picked = new Set<number>();
@@ -102,7 +102,7 @@ export async function loadDemo(tenant: string): Promise<void> {
     const items = [...picked].map((idx) => {
       const p = sellable[idx];
       return {
-        product_id: p.id, description: p.name, qty: p.service ? 1 : 1 + Math.floor(rand() * 5),
+        product_id: p.id, description: p.name, qty: p.service ? 1 + Math.floor(rand() * 2) : 2 + Math.floor(rand() * 7),
         unit_price: p.price, discount: 0,
       };
     });

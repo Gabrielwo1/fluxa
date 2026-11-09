@@ -49,3 +49,6 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+# cópias de segurança do .env.local
+.env.local.bak*
