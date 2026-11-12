@@ -19,7 +19,7 @@ export const GET = route(async () => {
 // criados com o clientUserId do próprio cliente (definido ao gerar o token).
 export const POST = route(async (req) => {
   const t = await getTenant();
-  if (!canEdit(t)) throw new HttpError(403, "Seu acesso é somente leitura");
+  if (t.mode !== "mvp" && !canEdit(t)) throw new HttpError(403, "Seu acesso é somente leitura");
   const { id } = await req.json();
   if (!id || typeof id !== "string") throw new HttpError(400, "id obrigatório");
 

@@ -6,7 +6,8 @@ import { pluggyFor } from "@/lib/pluggy-client";
 // o clientUserId amarra o item que será criado ao cliente atual
 export const POST = route(async () => {
   const t = await getTenant();
-  if (!canEdit(t)) throw new HttpError(403, "Seu acesso é somente leitura");
+  // quem entra por código pode conectar o próprio banco (o resto continua somente leitura)
+  if (t.mode !== "mvp" && !canEdit(t)) throw new HttpError(403, "Seu acesso é somente leitura");
   const data = await pluggyFor(t).post<{ accessToken: string }>("/connect_token", {
     options: { clientUserId: t.clientId },
   });

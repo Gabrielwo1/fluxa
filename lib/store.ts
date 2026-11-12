@@ -44,8 +44,36 @@ function requireEdit(t: Tenant) {
 
 // ----- conexões com a Pluggy -----
 
+// No modo MVP as conexões do ambiente (MVP_ITEMS_*) são fixas; as que o próprio cliente faz pelo
+// botão "Conectar banco" ficam num arquivo privado no Vercel Blob, e as duas listas se somam.
+const mvpItemsFile = (t: Tenant) => `mvp/${t.clientSlug}/items.json`;
+
+async function readMvpExtraItems(t: Tenant): Promise<string[]> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return [];
+  const file = await blobGet(mvpItemsFile(t), { access: "private", useCache: false });
+  if (!file || file.statusCode !== 200) return [];
+  try {
+    const ids = JSON.parse(await new Response(file.stream).text());
+    return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeMvpExtraItems(t: Tenant, ids: string[]): Promise<void> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new HttpError(503, "O armazenamento das conexões não está configurado neste ambiente.");
+  }
+  await blobPut(mvpItemsFile(t), JSON.stringify(ids), {
+    access: "private",
+    allowOverwrite: true,
+    addRandomSuffix: false,
+    contentType: "application/json",
+  });
+}
+
 export async function listConnectionIds(t: Tenant): Promise<string[]> {
-  if (t.mode === "mvp") return mvpItems(t.clientSlug);
+  if (t.mode === "mvp") return Array.from(new Set([...mvpItems(t.clientSlug), ...(await readMvpExtraItems(t))]));
   if (t.mode === "local") return readJson<string[]>("items.json", []);
   const { data, error } = await t
     .db!.from("pluggy_connections")
@@ -62,6 +90,10 @@ export async function addConnection(
   itemId: string,
   meta: { connector?: string | null; label?: string | null } = {}
 ): Promise<void> {
+  if (t.mode === "mvp") {
+    await writeMvpExtraItems(t, Array.from(new Set([...(await readMvpExtraItems(t)), itemId])));
+    return;
+  }
   requireEdit(t);
   if (t.mode === "local") {
     const ids = await readJson<string[]>("items.json", []);
@@ -79,6 +111,11 @@ export async function addConnection(
 }
 
 export async function removeConnection(t: Tenant, itemId: string): Promise<void> {
+  if (t.mode === "mvp") {
+    // só some o que o cliente conectou; as conexões do ambiente continuam
+    await writeMvpExtraItems(t, (await readMvpExtraItems(t)).filter((x) => x !== itemId));
+    return;
+  }
   requireEdit(t);
   if (t.mode === "local") {
     const ids = await readJson<string[]>("items.json", []);
