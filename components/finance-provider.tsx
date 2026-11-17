@@ -92,6 +92,7 @@ export const FUTURE_MONTHS = 12;
 
 export type Me = {
   mode: "supabase" | "mvp" | "local";
+  demo?: boolean;
   email: string | null;
   isStaff: boolean;
   role: "owner" | "editor" | "viewer";

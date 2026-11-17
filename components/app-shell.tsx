@@ -82,9 +82,9 @@ function NavLinks({
       {groups.map((g, gi) => (
         <div key={g.label ?? "top"} className={cn(gi > 0 && "mt-3")}>
           {g.label && !collapsed && (
-            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/45">{g.label}</p>
+            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-ink/45">{g.label}</p>
           )}
-          {g.label && collapsed && gi > 0 && <div className="mx-3 mb-2 border-t border-white/10" />}
+          {g.label && collapsed && gi > 0 && <div className="mx-3 mb-2 border-t border-ink/10" />}
           {g.items.map(({ href, label, Icon }) => (
             <Link
               key={href}
@@ -96,11 +96,13 @@ function NavLinks({
                 "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                 collapsed && "justify-center px-0",
                 isActive(href)
-                  ? "bg-lime text-ink"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? "bg-ink text-white shadow-[0_8px_18px_-10px_rgb(20_21_24/0.7)]"
+                  : "text-ink/70 hover:bg-white/80 hover:text-ink"
               )}
             >
-              <Icon size={18} strokeWidth={1.9} />
+              <span className={isActive(href) ? "text-lime" : undefined}>
+                <Icon size={18} strokeWidth={1.9} />
+              </span>
               {!collapsed && label}
             </Link>
           ))}
@@ -175,15 +177,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* menu lateral */}
       <aside
         className={cn(
-          "sticky top-[76px] hidden h-[calc(100vh-92px)] shrink-0 flex-col rounded-[28px] border border-white/10 bg-sidebar p-4 text-sidebar-foreground shadow-[0_20px_40px_-24px_rgb(20_21_24/0.5)] transition-[width] duration-200 lg:flex print:hidden",
+          "glass-sidebar sticky top-[76px] hidden h-[calc(100vh-92px)] shrink-0 flex-col rounded-[28px] p-4 text-ink transition-[width] duration-200 lg:flex print:hidden",
           collapsed ? "w-[76px]" : "w-64"
         )}
       >
         <Link href="/" className={cn("mb-5 flex items-center gap-2.5 px-2 py-1", collapsed && "justify-center px-0")}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime text-ink">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-lime">
             <Leaf size={18} strokeWidth={2.2} />
           </span>
-          {!collapsed && <span className="text-lg font-semibold tracking-tight text-white">{BRAND.name}</span>}
+          {!collapsed && <span className="text-lg font-semibold tracking-tight">{BRAND.name}</span>}
         </Link>
 
         <NavLinks groups={groups} isActive={isActive} collapsed={collapsed} />
@@ -191,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={toggleCollapsed}
           className={cn(
-            "mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white",
+            "mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-ink/55 transition-colors hover:bg-white/80 hover:text-ink",
             collapsed && "justify-center px-0"
           )}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
@@ -298,6 +300,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
+        {me?.demo && (
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-ink px-5 py-3 text-white print:hidden">
+            <p className="text-sm"><span className="mr-2 rounded-full bg-lime px-2.5 py-0.5 text-xs font-semibold text-ink">DEMONSTRAÇÃO</span>Dados fictícios, só seus. Mexa à vontade: tudo some em 24 horas.</p>
+            <Link href="/proposta" className="inline-flex h-9 items-center rounded-full bg-lime px-4 text-sm font-medium text-ink hover:bg-lime-deep">Quero o meu</Link>
+          </div>
+        )}
+
         {error && onBankPage && (
           <div className="mb-5 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         )}
@@ -316,7 +325,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href={href}
             className={cn(
               "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[10px] font-medium",
-              isActive(href) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground"
+              isActive(href) ? "bg-ink text-white" : "text-muted-foreground"
             )}
           >
             <Icon size={18} />
@@ -334,10 +343,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-[86%] gap-0 border-white/10 bg-ink p-0 text-white data-[side=left]:sm:max-w-xs">
-          <SheetHeader className="border-b border-white/10 p-4">
-            <SheetTitle className="flex items-center gap-2.5 text-lg font-semibold text-white">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lime text-ink">
+        <SheetContent side="left" className="glass-sidebar w-[86%] gap-0 rounded-none border-0 p-0 text-ink data-[side=left]:sm:max-w-xs">
+          <SheetHeader className="border-b border-ink/10 p-4">
+            <SheetTitle className="flex items-center gap-2.5 text-lg font-semibold">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-lime">
                 <Leaf size={16} />
               </span>
               {BRAND.name}

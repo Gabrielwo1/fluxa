@@ -385,7 +385,7 @@ export function buildSlides(client?: string): ProposalSlide[] {
             ) : (
               <CtaLink href="/lp#contato" className="justify-center">Quero começar <ArrowRight size={18} /></CtaLink>
             )}
-            <CtaLink href="#3" variant="outline" className="justify-center">Rever os módulos</CtaLink>
+            <CtaLink href="/demo" variant="outline" className="justify-center">Testar a demonstração</CtaLink>
           </div>
           <p className="mt-5 text-sm text-muted-foreground">
             {money0(PROPOSAL.setup)} de implantação (uma vez) e {money0(PROPOSAL.monthly)} por mês, com todos os módulos.

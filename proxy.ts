@@ -10,6 +10,8 @@ const PUBLIC = [
   "/login",
   "/apresentacao",
   "/proposta",
+  "/demo",
+  "/api/demo",
   "/api/leads",
   "/api/access/login",
   "/api/access/logout",

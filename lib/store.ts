@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { HttpError, canEdit, type Tenant } from "@/lib/tenant";
 import { get as blobGet, put as blobPut } from "@vercel/blob";
 import { mvpItems } from "@/lib/mvp";
+import { isDemoSlug } from "@/lib/demo";
 
 // Todos os dados do cliente passam por aqui. Em modo Supabase, as consultas
 // usam a sessão do usuário (RLS) e sempre filtram por client_id. Em modo local
@@ -149,6 +150,7 @@ async function readMvpBills(t: Tenant): Promise<Bill[]> {
 }
 
 async function writeMvpBills(t: Tenant, bills: Bill[]): Promise<void> {
+  if (isDemoSlug(t.clientSlug)) throw new HttpError(403, "Indisponível na demonstração.");
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     throw new HttpError(503, "O armazenamento das contas não está configurado neste ambiente.");
   }

@@ -94,8 +94,8 @@
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #e3fc3f;
   --sidebar-primary-foreground: #141518;
-  --sidebar-accent: #e3fc3f;
-  --sidebar-accent-foreground: #141518;
+  --sidebar-accent: #141518;
+  --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgb(255 255 255 / 0.1);
   --sidebar-ring: #e3fc3f;
 
@@ -174,10 +174,33 @@ html {
     box-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 20px 40px -24px rgb(31 48 82 / 0.18);
     backdrop-filter: blur(18px) saturate(1.2);
   }
+  /* Vidro do menu lateral: mais frio e mais translúcido que os cartões, para destacar a navegação */
+  .glass-sidebar {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.72) 0%, rgb(232 240 251 / 0.5) 100%);
+    border: 1px solid rgb(255 255 255 / 0.9);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.95) inset,
+      0 -1px 0 rgb(180 196 220 / 0.25) inset,
+      0 30px 50px -30px rgb(31 48 82 / 0.28);
+    backdrop-filter: blur(26px) saturate(1.35);
+  }
+  /* Barra "limão listrada" do Radar B2B */
+  .bar-lime {
+    background-color: var(--lime);
+    background-image: repeating-linear-gradient(-45deg, rgb(20 21 24 / 0.16) 0 3px, transparent 3px 8px);
+  }
+  .hatch { background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.14) 0 2px, transparent 2px 7px); }
+  .scroll-thin { scrollbar-width: thin; scrollbar-color: rgb(20 21 24 / 0.2) transparent; }
   .glass-panel {
     background: rgb(247 250 253 / 0.9);
     border: 1px solid rgb(255 255 255 / 0.9);
     box-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 30px 60px -28px rgb(31 48 82 / 0.35);
     backdrop-filter: blur(22px) saturate(1.2);
   }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }

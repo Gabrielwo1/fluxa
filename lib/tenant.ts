@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { MVP_COOKIE, mvpClientName, mvpConfigured, readSession } from "@/lib/mvp";
+import { isDemoSlug } from "@/lib/demo";
 
 export type Role = "owner" | "editor" | "viewer";
 
@@ -46,7 +47,7 @@ export async function getTenant(): Promise<Tenant> {
         role: "viewer",
         clientId: session.slug,
         clientSlug: session.slug,
-        clientName: mvpClientName(session.slug),
+        clientName: isDemoSlug(session.slug) ? "Empresa de demonstração" : mvpClientName(session.slug),
         clients: [],
         db: null,
       };

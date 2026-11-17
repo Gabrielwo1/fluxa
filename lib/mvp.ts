@@ -9,6 +9,8 @@
 //
 // Usa só Web Crypto, então roda no proxy (edge) e nas rotas.
 
+import { isDemoSlug } from "@/lib/demo";
+
 export const MVP_COOKIE = "fluxa_mvp";
 export const MVP_SESSION_DAYS = 7;
 
@@ -106,7 +108,8 @@ export async function readSession(token?: string | null): Promise<{ slug: string
     if (!ok) return null;
     const data = JSON.parse(new TextDecoder().decode(unb64url(payload)));
     if (typeof data.slug !== "string" || data.exp < Date.now()) return null;
-    return clientSlugs().includes(data.slug) ? { slug: data.slug } : null;
+    // empresas de demonstração ("demo-...") não têm código no ambiente: só valem com a assinatura
+    return clientSlugs().includes(data.slug) || isDemoSlug(data.slug) ? { slug: data.slug } : null;
   } catch {
     return null;
   }

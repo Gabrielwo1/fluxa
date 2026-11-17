@@ -95,3 +95,9 @@ export async function pingDb(): Promise<{ tables: number; companies: number }> {
   );
   return rows[0];
 }
+
+// Consulta SEM filtro de tenant, só para tarefas de manutenção (ambiente de demonstração, limpeza).
+// Nunca use em rotas que respondem a um usuário com dados de uma empresa.
+export async function adminQuery<T extends QueryResultRow = QueryResultRow>(sql: string, params: unknown[] = []): Promise<T[]> {
+  return (await pool().query<T>(sql, params)).rows;
+}
