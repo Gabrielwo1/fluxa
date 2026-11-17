@@ -85,6 +85,12 @@ export function erpRoute(
         const [status, error] = PG_MESSAGES[code];
         return NextResponse.json({ error }, { status });
       }
+      // banco fora do ar (projeto pausado, rede): aviso claro em vez de erro genérico
+      const msg = String((e as Error)?.message ?? "");
+      if (code?.startsWith("08") || code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "ETIMEDOUT" || /tenant\/user .* not found|Connection terminated|timeout expired/i.test(msg)) {
+        console.error("[erp] banco indisponível:", msg);
+        return NextResponse.json({ error: "O banco de dados está indisponível no momento. Se o projeto do Supabase estiver pausado, retome-o no painel." }, { status: 503 });
+      }
       console.error("[erp]", e);
       return NextResponse.json({ error: "Algo deu errado. Tente novamente." }, { status: 500 });
     }
