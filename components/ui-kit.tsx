@@ -16,7 +16,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "min-w-0 rounded-3xl border bg-card p-5 text-card-foreground shadow-[0_1px_2px_rgb(0_0_0/0.03)]",
+        "min-w-0 rounded-3xl border border-white/85 bg-card p-5 text-card-foreground shadow-[0_1px_0_rgb(255_255_255/0.9)_inset,0_20px_40px_-28px_rgb(31_48_82/0.2)] backdrop-blur-xl",
         className
       )}
     >

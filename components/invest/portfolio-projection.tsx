@@ -182,7 +182,7 @@ export function PortfolioProjection({
           <button
             type="button"
             onClick={() => setShowAll((v) => !v)}
-            className="mt-2 text-sm font-medium text-primary hover:underline"
+            className="mt-2 text-sm font-medium text-foreground hover:underline"
           >
             {showAll ? "Mostrar menos" : `Ver as ${rows.length} posições`}
           </button>

@@ -527,7 +527,7 @@ export function FinalCta() {
                 "Proposta em uma página, se fizer sentido",
               ].map((t) => (
                 <li key={t} className="flex items-center gap-2.5">
-                  <Workflow size={15} className="shrink-0 text-primary" />
+                  <Workflow size={15} className="shrink-0 text-foreground" />
                   {t}
                 </li>
               ))}

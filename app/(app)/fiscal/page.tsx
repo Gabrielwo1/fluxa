@@ -319,8 +319,8 @@ function Conexao({ emitente, onAtualizar }: { emitente: Emitente; onAtualizar: (
                 ativo ? "border-primary bg-primary/5" : "hover:bg-muted"
               }`}
             >
-              <a.Icone className={`size-5 ${ativo ? "text-primary" : "text-muted-foreground"}`} />
-              <span className={`text-xs font-medium ${ativo ? "text-primary" : ""}`}>{a.titulo}</span>
+              <a.Icone className={`size-5 ${ativo ? "text-foreground" : "text-muted-foreground"}`} />
+              <span className={`text-xs font-medium ${ativo ? "text-foreground" : ""}`}>{a.titulo}</span>
             </button>
           );
         })}
@@ -404,7 +404,7 @@ function Conexao({ emitente, onAtualizar }: { emitente: Emitente; onAtualizar: (
         acesso do Emissor Nacional: o gov.br não funciona aqui dentro porque o portal tem registro próprio no
         Login Único.{" "}
         <a
-          className="font-medium text-primary underline underline-offset-4"
+          className="font-medium text-foreground underline underline-offset-4"
           href="https://www.nfse.gov.br/EmissorNacional/Acesso/PrimeiroAcesso"
           target="_blank"
           rel="noopener noreferrer"

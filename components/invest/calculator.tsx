@@ -100,7 +100,7 @@ export function Calculator({
                 <button
                   type="button"
                   onClick={() => setInitial(fmtInput(portfolioValue))}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                  className="inline-flex items-center gap-1 font-medium text-foreground hover:underline"
                 >
                   <Wallet size={11} /> usar minha carteira ({brl.format(portfolioValue)})
                 </button>

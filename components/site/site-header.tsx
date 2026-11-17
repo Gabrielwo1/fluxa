@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { Leaf, Menu, Moon, Sun, X } from "lucide-react";
+import { Leaf, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { CtaLink } from "./cta";
@@ -17,8 +16,6 @@ const LINKS = [
   { href: "/apresentacao", label: "Apresentação" },
 ];
 
-const noop = () => () => {};
-
 export function BrandMark({ className = "" }: { className?: string }) {
   return (
     <Link href="/lp" className={`flex items-center gap-2.5 ${className}`}>
@@ -30,21 +27,9 @@ export function BrandMark({ className = "" }: { className?: string }) {
   );
 }
 
+// Só há o tema claro, igual ao Radar B2B e ao Atendente Syntax. Mantido para não quebrar quem importa.
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(noop, () => true, () => false);
-  const dark = mounted && resolvedTheme === "dark";
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="h-10 w-10 rounded-full bg-card"
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      aria-label={dark ? "Mudar para tema claro" : "Mudar para tema escuro"}
-    >
-      {dark ? <Sun size={16} /> : <Moon size={16} />}
-    </Button>
-  );
+  return null;
 }
 
 export function SiteHeader() {

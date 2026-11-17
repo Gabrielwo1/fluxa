@@ -3,39 +3,23 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import {
-  BarChart3,
-  Boxes,
-  Factory,
-  FileCheck,
   HandCoins,
-  Landmark,
   LayoutDashboard,
-  LayoutGrid,
   KeyRound,
   Leaf,
-  LifeBuoy,
-  LineChart,
   LogOut,
   Menu,
-  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Package,
   Plus,
   Receipt,
   RefreshCw,
-  Repeat,
   Search,
-  Settings,
   ShoppingCart,
-  Sun,
-  TrendingUp,
   Truck,
   Users,
-  Wallet,
-  ArrowLeftRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,67 +35,9 @@ import { cn } from "@/lib/utils";
 import { useFinance } from "@/components/finance-provider";
 import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/browser";
-import { SuiteSwitcher } from "@/components/suite-switcher";
+import { SuiteBar } from "@/components/suite-bar";
 
-type NavItem = { href: string; label: string; Icon: React.ComponentType<{ size?: number; strokeWidth?: number }> };
-type NavGroup = { label: string | null; items: NavItem[] };
-
-// Menu do ERP: do dia a dia (vender, comprar, receber) até a análise. Os bancos conectados
-// (Open Finance) ficam num grupo próprio, porque são uma fonte extra de dados, não o centro.
-const NAV_GROUPS: NavGroup[] = [
-  { label: null, items: [{ href: "/", label: "Início", Icon: LayoutDashboard }] },
-  {
-    label: "Vendas",
-    items: [
-      { href: "/vendas", label: "Vendas e orçamentos", Icon: ShoppingCart },
-      { href: "/clientes", label: "Clientes", Icon: Users },
-    ],
-  },
-  {
-    label: "Compras e estoque",
-    items: [
-      { href: "/compras", label: "Compras", Icon: Truck },
-      { href: "/fornecedores", label: "Fornecedores", Icon: Factory },
-      { href: "/produtos", label: "Produtos e serviços", Icon: Package },
-      { href: "/estoque", label: "Estoque", Icon: Boxes },
-    ],
-  },
-  {
-    label: "Financeiro",
-    items: [
-      { href: "/receber", label: "A receber", Icon: HandCoins },
-      { href: "/pagar", label: "A pagar", Icon: Receipt },
-      { href: "/fluxo-de-caixa", label: "Fluxo de caixa", Icon: LineChart },
-      { href: "/caixas", label: "Caixas e contas", Icon: Wallet },
-      { href: "/recorrencias", label: "Recorrências", Icon: Repeat },
-    ],
-  },
-  {
-    label: "Análises e fiscal",
-    items: [
-      { href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
-      { href: "/notas-fiscais", label: "Notas fiscais (MEI)", Icon: FileCheck },
-    ],
-  },
-  {
-    label: "Bancos (Open Finance)",
-    items: [
-      { href: "/bancos", label: "Painel bancário", Icon: Landmark },
-      { href: "/transacoes", label: "Transações", Icon: ArrowLeftRight },
-      { href: "/contas", label: "Contas conectadas", Icon: Wallet },
-      { href: "/investimentos", label: "Investimentos", Icon: TrendingUp },
-      { href: "/contas-fixas", label: "Contas fixas e previsão", Icon: Receipt },
-    ],
-  },
-  {
-    label: "Sistema",
-    items: [
-      { href: "/configuracoes", label: "Configurações", Icon: Settings },
-      { href: "/modulos", label: "Módulos da suíte", Icon: LayoutGrid },
-      { href: "/ajuda", label: "Ajuda e primeiros passos", Icon: LifeBuoy },
-    ],
-  },
-];
+import { NAV_GROUPS, type NavGroup, type NavItem } from "@/components/nav-data";
 
 const BANK_PATHS = ["/bancos", "/transacoes", "/contas", "/investimentos", "/contas-fixas"];
 
@@ -140,30 +66,6 @@ function readCollapsed(): boolean {
   }
 }
 
-const noopSubscribe = () => () => {};
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    noopSubscribe,
-    () => true,
-    () => false
-  );
-  const dark = mounted && resolvedTheme === "dark";
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="h-10 w-10 rounded-full bg-card"
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      aria-label={dark ? "Mudar para tema claro" : "Mudar para tema escuro"}
-      title={dark ? "Tema claro" : "Tema escuro"}
-    >
-      {dark ? <Sun size={16} /> : <Moon size={16} />}
-    </Button>
-  );
-}
-
 function NavLinks({
   groups,
   isActive,
@@ -180,9 +82,9 @@ function NavLinks({
       {groups.map((g, gi) => (
         <div key={g.label ?? "top"} className={cn(gi > 0 && "mt-3")}>
           {g.label && !collapsed && (
-            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">{g.label}</p>
+            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/45">{g.label}</p>
           )}
-          {g.label && collapsed && gi > 0 && <div className="mx-3 mb-2 border-t" />}
+          {g.label && collapsed && gi > 0 && <div className="mx-3 mb-2 border-t border-white/10" />}
           {g.items.map(({ href, label, Icon }) => (
             <Link
               key={href}
@@ -194,8 +96,8 @@ function NavLinks({
                 "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                 collapsed && "justify-center px-0",
                 isActive(href)
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-lime text-ink"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               )}
             >
               <Icon size={18} strokeWidth={1.9} />
@@ -267,19 +169,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex min-h-screen gap-4 p-3 pb-24 lg:p-4 lg:pb-4">
+    <div className="min-h-screen">
+    <SuiteBar />
+    <div className="flex gap-4 p-3 pb-24 lg:p-4 lg:pb-4">
       {/* menu lateral */}
       <aside
         className={cn(
-          "sticky top-4 hidden h-[calc(100vh-2rem)] shrink-0 flex-col rounded-3xl border bg-sidebar p-4 transition-[width] duration-200 lg:flex print:hidden",
+          "sticky top-[76px] hidden h-[calc(100vh-92px)] shrink-0 flex-col rounded-[28px] border border-white/10 bg-sidebar p-4 text-sidebar-foreground shadow-[0_20px_40px_-24px_rgb(20_21_24/0.5)] transition-[width] duration-200 lg:flex print:hidden",
           collapsed ? "w-[76px]" : "w-64"
         )}
       >
         <Link href="/" className={cn("mb-5 flex items-center gap-2.5 px-2 py-1", collapsed && "justify-center px-0")}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime text-ink">
             <Leaf size={18} strokeWidth={2.2} />
           </span>
-          {!collapsed && <span className="text-lg font-bold tracking-tight">{BRAND.name}</span>}
+          {!collapsed && <span className="text-lg font-semibold tracking-tight text-white">{BRAND.name}</span>}
         </Link>
 
         <NavLinks groups={groups} isActive={isActive} collapsed={collapsed} />
@@ -287,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={toggleCollapsed}
           className={cn(
-            "mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white",
             collapsed && "justify-center px-0"
           )}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
@@ -324,8 +228,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {sandboxStatus ?? "Modo teste"}
               </Button>
             ) : null}
-            <SuiteSwitcher />
-            <ThemeToggle />
             {onBankPage && (
               <Button
                 variant="outline"
@@ -432,10 +334,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="left" className="w-[86%] gap-0 p-0 data-[side=left]:sm:max-w-xs">
-          <SheetHeader className="border-b p-4">
-            <SheetTitle className="flex items-center gap-2.5 text-lg font-bold">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <SheetContent side="left" className="w-[86%] gap-0 border-white/10 bg-ink p-0 text-white data-[side=left]:sm:max-w-xs">
+          <SheetHeader className="border-b border-white/10 p-4">
+            <SheetTitle className="flex items-center gap-2.5 text-lg font-semibold text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lime text-ink">
                 <Leaf size={16} />
               </span>
               {BRAND.name}
@@ -446,6 +348,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </SheetContent>
       </Sheet>
+    </div>
     </div>
   );
 }
