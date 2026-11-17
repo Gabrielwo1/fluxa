@@ -133,7 +133,7 @@ export function Kpi({
     <Tag
       onClick={onClick}
       className={cn(
-        "min-w-0 rounded-3xl border bg-card p-4 text-left shadow-[0_1px_2px_rgb(0_0_0/0.03)]",
+        "min-w-0 rounded-2xl border bg-card p-4 text-left shadow-[0_1px_2px_rgb(0_0_0/0.03)]",
         onClick && "transition-colors hover:border-primary/60"
       )}
     >
