@@ -80,6 +80,8 @@ export type SaleStatus = "quote" | "confirmed" | "canceled";
 export type SaleItem = {
   id?: string;
   product_id: string | null;
+  // "product" ou "service" (só vem do servidor, para saber se a nota de serviço serve)
+  product_kind?: "product" | "service" | null;
   description: string;
   qty: number;
   unit_price: number;
@@ -107,6 +109,7 @@ export type Sale = {
   overdue?: number;
   items?: SaleItem[];
   titles?: Title[];
+  invoices?: Invoice[];
 };
 
 export type PurchaseStatus = "draft" | "received" | "canceled";
@@ -232,3 +235,29 @@ export const PAYMENT_METHODS = [
   "Transferência",
   "Outro",
 ] as const;
+
+export type Invoice = {
+  id: string;
+  sale_id: string | null;
+  sale_number: number | null;
+  number: string;
+  access_key: string;
+  issue_date: string;
+  amount: number;
+  customer_name: string;
+  customer_document: string;
+  description: string;
+  source: "xml" | "manual";
+  status: "issued" | "canceled";
+  has_xml: boolean;
+  notes: string;
+};
+
+export type InvoiceSummary = {
+  year: number;
+  issued_year: number;
+  issued_count: number;
+  limit: number;
+  sales_year: number;
+  pending_sales: { id: string; number: number; customer_name: string | null; customer_document: string; total: number; issue_date: string; has_company_customer: boolean }[];
+};

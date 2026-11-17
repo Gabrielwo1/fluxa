@@ -23,7 +23,7 @@ async function main() {
   const company = await import("../lib/erp/services/company");
 
   // limpa o tenant de teste
-  for (const t of ["erp_titles", "erp_recurring", "erp_sales", "erp_purchases", "erp_stock_moves", "erp_products", "erp_parties", "erp_categories", "erp_accounts", "erp_company"]) {
+  for (const t of ["erp_titles", "erp_recurring", "erp_sales", "erp_purchases", "erp_stock_moves", "erp_products", "erp_invoices", "erp_parties", "erp_categories", "erp_accounts", "erp_company"]) {
     await q(T, `delete from ${t} where tenant = $1`);
   }
   await ensureCompany(T, "Empresa Teste");
@@ -152,6 +152,33 @@ async function main() {
   assert.equal(cf.series[cf.series.length - 1].balance, cf.closing);
   assert.ok(Math.abs(cf.opening + cf.total_in - cf.total_out - cf.closing) < 0.01, "saldo final = saldo + entradas - saídas");
   ok("fluxo de caixa fecha a conta (abertura + entradas − saídas = fechamento)");
+
+  // --- notas fiscais (registro do XML do portal)
+  const inv = await import("../lib/erp/services/invoices");
+  const src = readFileSync("scripts/testar-danfse.ts", "utf8");
+  const CHAVE = "35503082212345678000199000000000012326081234567890";
+  const xml = src.slice(src.indexOf("const NFSE = `") + 14, src.indexOf("`;", src.indexOf("const NFSE = `"))).replace("${CHAVE}", CHAVE);
+  const sale2 = await sales.createSale(T, { customer_id: c1.id, issue_date: "2026-08-14", notes: "", payment_method: "", discount: 0,
+    items: [{ product_id: svc.id, description: "Site", qty: 1, unit_price: 1500, discount: 0 }],
+    confirm: { method: "Pix", installments: 1, first_due: "2026-08-14", interval_days: 30, paid_now: true, account_id: null } });
+  assert.ok((await inv.invoiceSummary(T)).pending_sales.some((p) => p.id === sale2.id), "venda sem nota aparece como pendente");
+  await q(T, "update erp_company set document = $2 where tenant = $1", ["99999999000199"]);
+  await assert.rejects(() => inv.registerFromXml(T, xml, sale2.id), /outro CNPJ/);
+  await q(T, "update erp_company set document = $2 where tenant = $1", ["12345678000199"]);
+  const nota = await inv.registerFromXml(T, xml, sale2.id);
+  assert.equal(nota.number, "123");
+  assert.equal(nota.amount, 1500);
+  assert.equal(nota.customer_name, "PADARIA SOL NASCENTE LTDA");
+  assert.equal(nota.sale_number, sale2.number);
+  await assert.rejects(() => inv.registerFromXml(T, xml), /já foi registrada/);
+  await assert.rejects(() => inv.registerFromXml(T, "<nada/>"), /não parece uma NFS-e/);
+  assert.ok(!(await inv.invoiceSummary(T)).pending_sales.some((p) => p.id === sale2.id), "venda com nota sai das pendentes");
+  const pdf = await inv.invoicePdf(T, nota.id);
+  assert.ok(pdf.pdf.length > 1000 && pdf.name.endsWith(".pdf"));
+  await inv.registerManual(T, { number: "77", issue_date: "2026-08-15", amount: 100, customer_name: "X" });
+  assert.equal((await sales.getSale(T, sale2.id)).invoices?.length, 1);
+  await inv.deleteInvoice(T, nota.id);
+  ok("notas fiscais: lê o XML, confere o CNPJ, evita duplicidade, liga à venda e gera o PDF");
 
   // --- demo, relatórios, painel
   await demo.loadDemo(T);

@@ -5,6 +5,7 @@ import { confirmSchema, saleSchema } from "@/lib/erp/schemas";
 import type { Sale, SaleItem, Title } from "@/lib/erp/types";
 import { addDays, defaultCategoryId, insertTitle, listTitlesByIds, splitAmount } from "@/lib/erp/services/finance";
 import { addMove, assertCanRemove } from "@/lib/erp/services/stock";
+import { invoicesOfSale } from "@/lib/erp/services/invoices";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -54,12 +55,14 @@ export async function getSale(tenant: string, id: string): Promise<Sale> {
   if (!sale) throw new HttpError(404, "Venda não encontrada.");
   sale.items = await q<SaleItem>(
     tenant,
-    `select i.id, i.product_id, i.description, i.qty::float8 as qty, i.unit_price::float8 as unit_price,
+    `select i.id, i.product_id, pr.kind as product_kind, i.description, i.qty::float8 as qty, i.unit_price::float8 as unit_price,
             i.unit_cost::float8 as unit_cost, i.discount::float8 as discount, i.total::float8 as total
        from erp_sale_items i join erp_sales s on s.id = i.sale_id
+       left join erp_products pr on pr.id = i.product_id
       where s.tenant = $1 and i.sale_id = $2 order by i.position`,
     [id]
   );
+  sale.invoices = await invoicesOfSale(tenant, id);
   const ids = await q<{ id: string }>(
     tenant,
     "select id from erp_titles where tenant = $1 and origin_type = 'sale' and origin_id = $2 order by due_date",

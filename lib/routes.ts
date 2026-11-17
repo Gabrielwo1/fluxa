@@ -14,6 +14,7 @@ const APP_ROUTES = [
   "/caixas",
   "/recorrencias",
   "/relatorios",
+  "/notas-fiscais",
   "/buscar",
   "/configuracoes",
   "/ajuda",

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Copy, Pencil, Plus, Printer, ShoppingCart, Trash2, Undo2, XCircle } from "lucide-react";
+import { ArrowLeft, Check, Copy, FileCheck, Pencil, Plus, Printer, ShoppingCart, Trash2, Undo2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Panel } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Chips, ConfirmDialog, EmptyState, ErrorNote, FormDialog, Kpi, LoadingRo
 import { DataTable, type Column } from "@/components/erp/data-table";
 import { PaymentFields, defaultPayment, toConfirmPayload, type PaymentState } from "@/components/erp/payment-fields";
 import { PayDialog } from "@/components/erp/pay-dialog";
+import { InvoiceGuide } from "@/components/erp/invoice-guide";
 import { SaleStatusTag, TitleStatusTag } from "@/components/erp/status";
 import { ErpGate } from "@/components/erp/gate";
 
@@ -152,6 +153,7 @@ function Detail({ id, canWrite }: { id: string; canWrite: boolean }) {
   const [canceling, setCanceling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [paying, setPaying] = useState<Title | null>(null);
+  const [invoicing, setInvoicing] = useState(false);
   const [pay, setPay] = useState<PaymentState>(() => defaultPayment(todayIso()));
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -207,6 +209,9 @@ function Detail({ id, canWrite }: { id: string; canWrite: boolean }) {
                 <Button variant="outline" className="rounded-full" render={<Link href={`/vendas/${sale.id}/editar`} />}><Pencil size={15} /> Editar</Button>
                 <Button className="rounded-full font-semibold" onClick={() => { setPay(defaultPayment(sale.issue_date)); setFormError(null); setConfirming(true); }}><Check size={15} /> Confirmar venda</Button>
               </>
+            )}
+            {canWrite && sale.status === "confirmed" && (
+              <Button variant="outline" className="rounded-full" onClick={() => setInvoicing(true)}><FileCheck size={15} /> {(sale.invoices ?? []).some((i) => i.status === "issued") ? "Nota fiscal" : "Emitir nota"}</Button>
             )}
             {canWrite && sale.status === "confirmed" && (
               <Button variant="outline" className="rounded-full text-destructive" onClick={() => setCanceling(true)}><XCircle size={15} /> Cancelar venda</Button>
@@ -282,6 +287,9 @@ function Detail({ id, canWrite }: { id: string; canWrite: boolean }) {
               <div className="flex justify-between"><dt className="text-muted-foreground">Cliente</dt><dd className="text-right font-medium">{sale.customer_id ? <Link className="underline-offset-2 hover:underline" href="/clientes">{sale.customer_name}</Link> : "Balcão"}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Forma de pagamento</dt><dd className="text-right font-medium">{sale.payment_method || "—"}</dd></div>
               {sale.status === "confirmed" && (
+                <div className="flex justify-between"><dt className="text-muted-foreground">Nota fiscal</dt><dd className="text-right font-medium">{(sale.invoices ?? []).filter((i) => i.status === "issued").map((i) => `nº ${i.number}`).join(", ") || "ainda sem nota"}</dd></div>
+              )}
+              {sale.status === "confirmed" && (
                 <>
                   <div className="flex justify-between"><dt className="text-muted-foreground">Já recebido</dt><dd className="font-medium tabular-nums">{money(sale.received ?? 0)}</dd></div>
                   <div className="flex justify-between"><dt className="text-muted-foreground">Falta receber</dt><dd className="font-medium tabular-nums">{money(sale.open ?? 0)}</dd></div>
@@ -306,6 +314,7 @@ function Detail({ id, canWrite }: { id: string; canWrite: boolean }) {
         Não dá para desfazer.
       </ConfirmDialog>
       <PayDialog title={paying} onOpenChange={(o) => !o && setPaying(null)} onDone={reload} />
+      <InvoiceGuide open={invoicing} onOpenChange={setInvoicing} saleId={id} onDone={reload} />
     </>
   );
 }

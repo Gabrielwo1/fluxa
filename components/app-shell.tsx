@@ -8,6 +8,7 @@ import {
   BarChart3,
   Boxes,
   Factory,
+  FileCheck,
   HandCoins,
   Landmark,
   LayoutDashboard,
@@ -83,7 +84,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/recorrencias", label: "Recorrências", Icon: Repeat },
     ],
   },
-  { label: "Análises", items: [{ href: "/relatorios", label: "Relatórios", Icon: BarChart3 }] },
+  {
+    label: "Análises e fiscal",
+    items: [
+      { href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
+      { href: "/notas-fiscais", label: "Notas fiscais (MEI)", Icon: FileCheck },
+    ],
+  },
   {
     label: "Bancos (Open Finance)",
     items: [
