@@ -13,6 +13,8 @@ const PUBLIC = [
   "/api/leads",
   "/api/access/login",
   "/api/access/logout",
+  // chamada pelo agendador da Vercel; a própria rota confere o CRON_SECRET
+  "/api/cron",
 ];
 
 const isPublic = (path: string) =>

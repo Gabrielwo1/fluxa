@@ -86,3 +86,12 @@ export async function tx<R>(tenant: string, fn: (t: Tx) => Promise<R>): Promise<
     client.release();
   }
 }
+
+// Consulta leve usada pelo "keepalive": prova que o banco responde e conta como atividade.
+export async function pingDb(): Promise<{ tables: number; companies: number }> {
+  const { rows } = await pool().query<{ tables: number; companies: number }>(
+    `select (select count(*) from information_schema.tables where table_schema = 'public')::int as tables,
+            (select count(*) from erp_company)::int as companies`
+  );
+  return rows[0];
+}
