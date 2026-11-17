@@ -12,6 +12,7 @@ import {
   HandCoins,
   Landmark,
   LayoutDashboard,
+  LayoutGrid,
   KeyRound,
   Leaf,
   LifeBuoy,
@@ -50,6 +51,7 @@ import { cn } from "@/lib/utils";
 import { useFinance } from "@/components/finance-provider";
 import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/browser";
+import { SuiteSwitcher } from "@/components/suite-switcher";
 
 type NavItem = { href: string; label: string; Icon: React.ComponentType<{ size?: number; strokeWidth?: number }> };
 type NavGroup = { label: string | null; items: NavItem[] };
@@ -105,6 +107,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Sistema",
     items: [
       { href: "/configuracoes", label: "Configurações", Icon: Settings },
+      { href: "/modulos", label: "Módulos da suíte", Icon: LayoutGrid },
       { href: "/ajuda", label: "Ajuda e primeiros passos", Icon: LifeBuoy },
     ],
   },
@@ -321,6 +324,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {sandboxStatus ?? "Modo teste"}
               </Button>
             ) : null}
+            <SuiteSwitcher />
             <ThemeToggle />
             {onBankPage && (
               <Button

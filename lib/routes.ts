@@ -18,6 +18,7 @@ const APP_ROUTES = [
   "/buscar",
   "/configuracoes",
   "/ajuda",
+  "/modulos",
   "/bancos",
   "/transacoes",
   "/contas",
