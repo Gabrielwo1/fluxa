@@ -5,11 +5,13 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { WHATSAPP } from "@/lib/brand";
 
 const SIZES = [
-  "Até R$ 500 mil por mês",
-  "R$ 500 mil a R$ 2 milhões por mês",
-  "R$ 2 a R$ 10 milhões por mês",
-  "Acima de R$ 10 milhões por mês",
+  "Até R$ 6.750 por mês (limite do MEI)",
+  "De R$ 6.750 a R$ 20 mil por mês",
+  "De R$ 20 mil a R$ 100 mil por mês",
+  "Mais de R$ 100 mil por mês",
 ];
+
+const CONTROLS = ["Caderno ou anotações", "Planilha", "Outro sistema", "Não controlo ainda"];
 
 const field =
   "h-12 w-full rounded-xl border border-white/15 bg-white/10 px-4 text-sm text-background outline-none placeholder:text-background/50 focus:border-primary focus:ring-2 focus:ring-primary/40";
@@ -30,13 +32,15 @@ export function LeadForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const { control, pain, ...data } = Object.fromEntries(new FormData(form).entries());
+    // o campo "pain" da base guarda o texto livre; o controle atual vai junto, como prefixo
+    const note = [control ? `Controla hoje: ${control}.` : "", String(pain ?? "").trim()].filter(Boolean).join(" ");
     setState("sending");
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, ...utmFromUrl() }),
+        body: JSON.stringify({ ...data, pain: note, ...utmFromUrl() }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setState("done");
@@ -55,8 +59,14 @@ export function LeadForm() {
         <CheckCircle2 size={40} className="mx-auto text-good" />
         <h3 className="mt-4 text-xl font-bold">Recebemos o seu pedido</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Vamos entrar em contato para marcar o diagnóstico.
+          Vamos entrar em contato para liberar o seu acesso. Enquanto isso, que tal testar?
         </p>
+        <a
+          href="/demo"
+          className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground"
+        >
+          Testar agora, sem cadastro
+        </a>
         {WHATSAPP && (
           <a
             href={`https://wa.me/${WHATSAPP}`}
@@ -73,7 +83,7 @@ export function LeadForm() {
     <form
       onSubmit={onSubmit}
       className="space-y-3 rounded-3xl bg-background/5 p-5 ring-1 ring-white/10 md:p-6"
-      aria-label="Pedir diagnóstico gratuito"
+      aria-label="Pedir acesso antecipado"
     >
       {/* campo-armadilha para robôs: pessoas não veem nem preenchem */}
       <input
@@ -86,47 +96,56 @@ export function LeadForm() {
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-background/70">Nome *</span>
-          <input name="name" required maxLength={120} autoComplete="name" className={field} placeholder="Seu nome" />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-background/70">Cargo</span>
-          <input name="role" maxLength={120} autoComplete="organization-title" className={field} placeholder="Ex.: diretor financeiro" />
-        </label>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-background/70">E-mail corporativo *</span>
-          <input name="email" type="email" required maxLength={160} autoComplete="email" className={field} placeholder="voce@empresa.com.br" />
+          <span className="mb-1.5 block text-xs font-medium text-background/70">Seu nome *</span>
+          <input name="name" required maxLength={120} autoComplete="name" className={field} placeholder="Como podemos te chamar" />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-background/70">WhatsApp</span>
           <input name="phone" type="tel" maxLength={30} autoComplete="tel" className={field} placeholder="(00) 00000-0000" />
         </label>
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-background/70">E-mail *</span>
+          <input name="email" type="email" required maxLength={160} autoComplete="email" className={field} placeholder="voce@email.com" />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-background/70">Nome do seu negócio *</span>
+          <input name="company" required maxLength={160} autoComplete="organization" className={field} placeholder="Ex.: Doces da Ana" />
+        </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-background/70">Quanto vende por mês, mais ou menos?</span>
+          <select name="size" defaultValue="" className={`${field} appearance-none`}>
+            <option value="" className="text-foreground">Prefiro informar depois</option>
+            {SIZES.map((s) => (
+              <option key={s} value={s} className="text-foreground">
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-background/70">Como controla o negócio hoje?</span>
+          <select name="control" defaultValue="" className={`${field} appearance-none`}>
+            <option value="" className="text-foreground">Prefiro não dizer</option>
+            {CONTROLS.map((c) => (
+              <option key={c} value={c} className="text-foreground">
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-background/70">Empresa *</span>
-        <input name="company" required maxLength={160} autoComplete="organization" className={field} placeholder="Nome da empresa" />
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-background/70">Faturamento mensal aproximado</span>
-        <select name="size" defaultValue="" className={`${field} appearance-none`}>
-          <option value="" className="text-foreground">Prefiro informar depois</option>
-          {SIZES.map((s) => (
-            <option key={s} value={s} className="text-foreground">
-              {s}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-background/70">O que mais pesa no seu financeiro hoje?</span>
+        <span className="mb-1.5 block text-xs font-medium text-background/70">O que mais te atrapalha hoje?</span>
         <textarea
           name="pain"
           rows={3}
-          maxLength={600}
+          maxLength={560}
           className={`${field} h-auto resize-none py-3`}
-          placeholder="Ex.: consolidar extratos, previsão de caixa, aprovações…"
+          placeholder="Ex.: não sei quanto sobrou, cliente que não paga, estoque…"
         />
       </label>
       <label className="flex items-start gap-3 text-xs text-background/70">
@@ -137,7 +156,7 @@ export function LeadForm() {
           className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
         />
         <span>
-          Concordo em receber contato sobre o diagnóstico e com o tratamento dos
+          Concordo em receber contato sobre o meu acesso e com o tratamento dos
           meus dados conforme a{" "}
           <a href="/lp/privacidade" className="font-medium text-background underline">
             política de privacidade
@@ -155,7 +174,7 @@ export function LeadForm() {
             <Loader2 size={18} className="animate-spin" /> Enviando…
           </>
         ) : (
-          "Quero meu diagnóstico gratuito"
+          "Quero acesso antecipado"
         )}
       </button>
       {state === "error" && (

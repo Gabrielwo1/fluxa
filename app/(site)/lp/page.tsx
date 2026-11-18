@@ -4,7 +4,6 @@ import { SiteHeader } from "@/components/site/site-header";
 import { StickyCta } from "@/components/site/sticky-cta";
 import {
   CalculatorSection,
-  Custom,
   Faq,
   Features,
   FinalCta,
@@ -13,18 +12,19 @@ import {
   ProcessSteps,
   Security,
   SiteFooter,
+  SuiteSection,
 } from "@/components/site/sections";
 
 export const metadata: Metadata = {
   title: {
-    absolute: `${BRAND.name} | Sistema financeiro sob medida conectado aos seus bancos`,
+    absolute: `${BRAND.name} | Descubra quanto sobrou de verdade no seu negócio`,
   },
   description:
-    "Painel financeiro personalizado para empresas, conectado aos bancos via Open Finance. Caixa em tempo real, previsão de meses futuros e rotinas modeladas do seu jeito. Agende um diagnóstico gratuito.",
+    "Vendas, estoque, contas a receber e caixa num lugar só, feito para MEI e pequenos negócios. Registrou a venda, o estoque baixa e você vê quanto sobrou. Teste agora, sem cadastro.",
   openGraph: {
-    title: `${BRAND.name} | Seu caixa em tempo real, do jeito do seu financeiro`,
+    title: `${BRAND.name} | Descubra quanto sobrou de verdade no seu negócio`,
     description:
-      "Sistema financeiro sob medida conectado aos bancos via Open Finance. Somente leitura, sem mexer no seu dinheiro.",
+      "Para MEI e pequenos negócios: registre a venda, o estoque baixa e você vê quem te deve e quanto sobrou no mês. Teste sem cadastro.",
     type: "website",
     locale: "pt_BR",
   },
@@ -38,7 +38,7 @@ export default function LandingPage() {
         <Hero />
         <Problem />
         <Features />
-        <Custom />
+        <SuiteSection />
         <ProcessSteps />
         <CalculatorSection />
         <Security />

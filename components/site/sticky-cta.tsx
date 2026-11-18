@@ -7,7 +7,7 @@ export function StickyCta() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const target = document.getElementById("diagnostico");
+    const target = document.getElementById("acesso");
     if (!target) return;
     const io = new IntersectionObserver(
       ([entry]) => setHidden(entry.isIntersecting),
@@ -21,10 +21,10 @@ export function StickyCta() {
   return (
     <div className="fixed inset-x-3 bottom-3 z-30 md:hidden">
       <a
-        href="#diagnostico"
+        href="/demo"
         className="flex h-13 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground shadow-xl"
       >
-        Agendar diagnóstico gratuito
+        Testar agora, sem cadastro
       </a>
     </div>
   );

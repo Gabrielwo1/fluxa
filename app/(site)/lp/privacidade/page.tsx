@@ -21,17 +21,17 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-base font-semibold text-foreground">Quais dados coletamos</h2>
             <p>
-              No formulário de diagnóstico: nome, cargo, e-mail corporativo,
-              telefone, empresa, faixa de faturamento e o texto que você
-              escrever. Também guardamos os parâmetros de campanha da URL
+              No formulário de acesso antecipado: nome, e-mail, telefone,
+              nome do negócio, faixa de vendas mensais, como você controla o
+              negócio hoje e o texto que você escrever. Também guardamos os parâmetros de campanha da URL
               (utm) para saber de qual anúncio você veio.
             </p>
           </section>
           <section>
             <h2 className="mb-2 text-base font-semibold text-foreground">Para que usamos</h2>
             <p>
-              Para entrar em contato sobre o diagnóstico gratuito e, se fizer
-              sentido, enviar uma proposta. Não vendemos nem compartilhamos
+              Para entrar em contato sobre o seu acesso ao Fluxa e, se fizer
+              sentido, enviar os planos e valores. Não vendemos nem compartilhamos
               esses dados com terceiros para publicidade.
             </p>
           </section>

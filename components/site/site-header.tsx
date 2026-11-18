@@ -8,12 +8,11 @@ import { BRAND } from "@/lib/brand";
 import { CtaLink } from "./cta";
 
 const LINKS = [
-  { href: "#solucao", label: "Solução" },
-  { href: "#sob-medida", label: "Sob medida" },
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#seguranca", label: "Segurança" },
-  { href: "#faq", label: "Perguntas" },
-  { href: "/apresentacao", label: "Apresentação" },
+  { href: "/lp#solucao", label: "O que faz" },
+  { href: "/lp#suite", label: "Suíte" },
+  { href: "/lp#como-funciona", label: "Como começar" },
+  { href: "/lp#calcule", label: "Faça a conta" },
+  { href: "/lp#faq", label: "Perguntas" },
 ];
 
 export function BrandMark({ className = "" }: { className?: string }) {
@@ -51,8 +50,8 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
-          <CtaLink href="#diagnostico" className="hidden h-10 px-5 text-sm sm:inline-flex">
-            Agendar diagnóstico
+          <CtaLink href="/demo" className="hidden h-10 px-5 text-sm sm:inline-flex">
+            Testar agora
           </CtaLink>
           <Button
             variant="outline"
@@ -82,11 +81,11 @@ export function SiteHeader() {
             </a>
           ))}
           <a
-            href="#diagnostico"
+            href="/demo"
             onClick={() => setOpen(false)}
             className="mt-2 block rounded-full bg-primary px-4 py-3 text-center font-semibold text-primary-foreground"
           >
-            Agendar diagnóstico
+            Testar agora
           </a>
         </nav>
       )}
