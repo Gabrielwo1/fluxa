@@ -26,10 +26,10 @@ function RadarPreview() {
     <>
       <PageHeader
         title="Prospecção"
-        description="Encontre empresas que compram o que você vende, direto da base aberta da Receita Federal. Prévia do Radar B2B dentro do Fluxa."
-        help={<p>É uma amostra do Radar B2B (b2bradar.pro), com dados de exemplo. Em breve ele se conecta ao seu catálogo e ao CRM do Fluxa.</p>}
+        description="Encontre empresas que compram o que você vende, direto da base aberta da Receita Federal. Prévia do Radar Empresas dentro do Fluxa."
+        help={<p>É uma amostra do Radar Empresas (b2bradar.pro), com dados de exemplo. Em breve ele se conecta ao seu catálogo e ao CRM do Fluxa.</p>}
       />
-      <PreviewBanner feature="prospeccao" title="Radar B2B dentro do Fluxa">
+      <PreviewBanner feature="prospeccao" title="Radar Empresas dentro do Fluxa">
         Dados fictícios. A versão real busca na base da Receita e sugere clientes a partir dos produtos que você já cadastrou.
       </PreviewBanner>
       <div className="mb-4">

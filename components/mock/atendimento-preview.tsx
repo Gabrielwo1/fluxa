@@ -19,10 +19,10 @@ function AtendimentoPreview() {
     <>
       <PageHeader
         title="Atendimento com IA"
-        description="A IA responde no WhatsApp, consulta preço e estoque do ERP e monta o pedido. Prévia do Atendente Syntax dentro do Fluxa."
-        help={<p>É uma amostra do Atendente Syntax, com conversas de exemplo. Em breve ele se conecta ao seu catálogo, estoque e vendas do Fluxa.</p>}
+        description="A IA responde no WhatsApp, consulta preço e estoque do ERP e monta o pedido. Prévia do IA WhatsApp dentro do Fluxa."
+        help={<p>É uma amostra do IA WhatsApp, com conversas de exemplo. Em breve ele se conecta ao seu catálogo, estoque e vendas do Fluxa.</p>}
       />
-      <PreviewBanner feature="atendimento-ia" title="Atendente Syntax dentro do Fluxa">
+      <PreviewBanner feature="atendimento-ia" title="IA WhatsApp dentro do Fluxa">
         Conversas fictícias. Na versão real a IA lê seu estoque, cria o pedido no Fluxa e você aprova antes de baixar o estoque.
       </PreviewBanner>
       <Kpis />

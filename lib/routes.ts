@@ -2,6 +2,7 @@
 // caminho (link antigo, digitado errado, endereço de outro ambiente) cai no início,
 // em vez de levar o cliente a uma página 404 logo depois de entrar.
 const APP_ROUTES = [
+  "/assinatura",
   "/clientes",
   "/fornecedores",
   "/produtos",

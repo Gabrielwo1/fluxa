@@ -18,7 +18,8 @@ const RADAR_LINKS = [
 
 // Menu superior da suíte: uma aba por ferramenta e, ao abrir, um painel largo (mega menu)
 // com os atalhos de cada uma. Fluxa abre na mesma aba; as outras ferramentas, em nova aba.
-export function SuiteBar() {
+// `actions` é o canto direito da barra (busca, empresa, atalho "Novo"), para não gastar uma segunda faixa.
+export function SuiteBar({ actions }: { actions?: React.ReactNode }) {
   const pathname = usePathname();
   // o painel só vale na página em que foi aberto; ao navegar, fecha sozinho
   const [state, setState] = useState<{ id: SuiteModule["id"]; path: string } | null>(null);
@@ -53,7 +54,7 @@ export function SuiteBar() {
       }}
       onMouseEnter={clear}
     >
-      <div className="flex items-center gap-3 rounded-full bg-ink p-1.5 pr-3 shadow-[0_12px_30px_-16px_rgb(20_21_24/0.6)]">
+      <div className="flex items-center gap-3 rounded-full bg-ink p-1.5 shadow-[0_12px_30px_-16px_rgb(20_21_24/0.6)]">
         <Link href="/" aria-label="Fluxa, início" className="ml-1 grid size-9 shrink-0 place-items-center rounded-full bg-lime text-ink">
           <Radar className="size-[18px]" />
         </Link>
@@ -79,14 +80,15 @@ export function SuiteBar() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={m.icon} alt="" className="hidden size-5 rounded-full sm:block" />
-                <span className="sm:hidden">{m.name.split(" ")[0]}</span>
+                <span className="sm:hidden">{m.short}</span>
                 <span className="hidden sm:inline">{m.name}</span>
                 <ChevronDown size={14} className={cn("transition", active && "rotate-180")} />
               </button>
             );
           })}
         </nav>
-        <Link href="/modulos" className="hidden shrink-0 text-xs font-medium text-white/60 hover:text-white md:block">Ver todos</Link>
+        <Link href="/modulos" className="hidden shrink-0 text-xs font-medium text-white/60 hover:text-white 2xl:block">Ver todos</Link>
+        {actions && <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">{actions}</div>}
       </div>
 
       {mod && (
@@ -125,9 +127,20 @@ export function SuiteBar() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">{mod.description}</p>
-                <a href={mod.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white hover:bg-coal-2">
-                  Abrir {mod.name} <ArrowUpRight size={15} />
-                </a>
+                {mod.id === "radar" ? (
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Link href="/prospeccao" className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white hover:bg-coal-2">
+                      Abrir aqui no Fluxa
+                    </Link>
+                    <a href={mod.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
+                      Site do Radar <ArrowUpRight size={14} />
+                    </a>
+                  </div>
+                ) : (
+                  <a href={mod.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white hover:bg-coal-2">
+                    Abrir {mod.name} <ArrowUpRight size={15} />
+                  </a>
+                )}
               </div>
               <div>
                 {mod.id === "radar" ? (

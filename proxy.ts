@@ -17,6 +17,8 @@ const PUBLIC = [
   "/api/access/logout",
   // chamada pelo agendador da Vercel; a própria rota confere o CRON_SECRET
   "/api/cron",
+  // notificações do Mercado Pago (sem login); a rota confere tudo na API do Mercado Pago
+  "/api/billing/webhook",
 ];
 
 const isPublic = (path: string) =>

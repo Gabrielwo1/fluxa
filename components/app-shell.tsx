@@ -36,6 +36,7 @@ import { useFinance } from "@/components/finance-provider";
 import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/browser";
 import { SuiteBar } from "@/components/suite-bar";
+import { SupportChat } from "@/components/support-chat";
 
 import { NAV_GROUPS, type NavGroup, type NavItem } from "@/components/nav-data";
 
@@ -170,9 +171,119 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/receber", label: "Financeiro", Icon: HandCoins },
   ];
 
+  // canto direito da barra superior: busca, empresa, sair e criar
+  const actions = (
+    <>
+      <form onSubmit={submitSearch} className="relative hidden lg:block">
+        <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/55" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar…"
+          className="h-9 w-40 rounded-full border border-white/10 bg-white/10 pl-9 pr-3 text-sm text-white outline-none transition-[width,background-color] placeholder:text-white/50 focus:w-56 focus:border-lime/70 focus:bg-white/15 xl:w-56 xl:focus:w-72"
+          aria-label="Buscar no sistema"
+        />
+      </form>
+      <Link
+        href="/buscar"
+        aria-label="Buscar no sistema"
+        className="grid size-9 place-items-center rounded-full text-white/75 transition hover:bg-white/10 hover:text-white lg:hidden"
+      >
+        <Search size={17} />
+      </Link>
+
+      {onBankPage && (sandboxStatus !== null || itemIds.length === 0) ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden h-9 rounded-full border border-dashed border-white/25 px-3 text-white/70 hover:bg-white/10 hover:text-white xl:inline-flex"
+          onClick={startSandbox}
+          disabled={sandboxStatus !== null}
+          title="Cria uma conexão com o banco fictício da Pluggy"
+        >
+          {sandboxStatus ?? "Modo teste"}
+        </Button>
+      ) : null}
+      {onBankPage && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 rounded-full text-white/75 hover:bg-white/10 hover:text-white"
+          onClick={refresh}
+          disabled={loading || itemIds.length === 0}
+          aria-label="Atualizar dados bancários"
+          title="Atualizar dados bancários"
+        >
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+        </Button>
+      )}
+
+      <div
+        className="hidden h-9 items-center gap-2.5 rounded-full bg-white/10 pl-1 md:flex"
+        title={me?.client.name ?? "Minha empresa"}
+      >
+        <span className="flex size-7 items-center justify-center rounded-full bg-lime text-sm font-bold uppercase text-ink">
+          {(me?.client.name ?? "G").slice(0, 1)}
+        </span>
+        {me?.isStaff && me.clients.length > 1 ? (
+          <select
+            value={me.client.id}
+            onChange={(e) => switchClient(e.target.value)}
+            aria-label="Trocar de empresa"
+            className="mr-3 max-w-36 cursor-pointer bg-transparent text-sm font-semibold text-white outline-none"
+          >
+            {me.clients.map((c) => (
+              <option key={c.id} value={c.id} className="text-ink">
+                {c.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="mr-3 hidden max-w-36 truncate text-sm font-semibold text-white xl:block">{me?.client.name ?? "Minha empresa"}</span>
+        )}
+      </div>
+      {(me?.mode === "supabase" || me?.mode === "mvp") && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden size-9 rounded-full text-white/75 hover:bg-white/10 hover:text-white md:inline-flex"
+          onClick={logout}
+          aria-label="Sair"
+          title="Sair"
+        >
+          <LogOut size={16} />
+        </Button>
+      )}
+
+      {onBankPage ? (
+        <Button className="h-9 rounded-full bg-lime px-3.5 font-semibold text-ink hover:bg-lime-deep" onClick={startConnect} disabled={connecting}>
+          <Plus size={16} />
+          <span className="hidden sm:inline">{connecting ? "Abrindo…" : "Conectar banco"}</span>
+        </Button>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="inline-flex h-9 items-center gap-1.5 rounded-full bg-lime px-3.5 text-sm font-semibold text-ink outline-none transition-colors hover:bg-lime-deep focus-visible:ring-3 focus-visible:ring-lime/50">
+            <Plus size={16} />
+            <span className="hidden sm:inline">Novo</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel>Criar agora</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {QUICK_CREATE.map(({ href, label, Icon }) => (
+              <DropdownMenuItem key={href} onClick={() => router.push(href)} className="gap-2.5 py-2">
+                <Icon size={16} />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen">
-    <SuiteBar />
+    <SuiteBar actions={actions} />
     <div className="flex gap-4 p-3 pb-24 lg:p-4 lg:pb-4">
       {/* menu lateral */}
       <aside
@@ -205,101 +316,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* conteúdo */}
       <div className="min-w-0 flex-1">
-        <header className="mb-5 flex flex-wrap items-center gap-3 print:hidden">
-          <form onSubmit={submitSearch} className="relative min-w-0 flex-1 basis-60 md:max-w-sm">
-            <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar cliente, produto, venda…"
-              className="h-10 w-full rounded-full border bg-card pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
-              aria-label="Buscar no sistema"
-            />
-          </form>
-
-          <div className="ml-auto flex items-center gap-2">
-            {onBankPage && (sandboxStatus !== null || itemIds.length === 0) ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hidden rounded-full border border-dashed text-muted-foreground sm:inline-flex"
-                onClick={startSandbox}
-                disabled={sandboxStatus !== null}
-                title="Cria uma conexão com o banco fictício da Pluggy"
-              >
-                {sandboxStatus ?? "Modo teste"}
-              </Button>
-            ) : null}
-            {onBankPage && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-card"
-                onClick={refresh}
-                disabled={loading || itemIds.length === 0}
-                aria-label="Atualizar dados bancários"
-                title="Atualizar dados bancários"
-              >
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              </Button>
-            )}
-            <div className="hidden items-center gap-2.5 rounded-full border bg-card py-1 pl-1 pr-4 md:flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold uppercase text-primary-foreground">
-                {(me?.client.name ?? "G").slice(0, 1)}
-              </span>
-              <span className="text-left leading-tight">
-                {me?.isStaff && me.clients.length > 1 ? (
-                  <select
-                    value={me.client.id}
-                    onChange={(e) => switchClient(e.target.value)}
-                    aria-label="Trocar de empresa"
-                    className="max-w-40 cursor-pointer bg-transparent text-sm font-semibold outline-none"
-                  >
-                    {me.clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="block max-w-40 truncate text-sm font-semibold">{me?.client.name ?? "Minha empresa"}</span>
-                )}
-                <span className="block text-[11px] text-muted-foreground">
-                  {me?.mode === "local" ? "Modo local" : me?.isStaff ? "Equipe" : me?.role === "viewer" && me.mode === "supabase" ? "Somente leitura" : "Empresa"}
-                </span>
-              </span>
-            </div>
-            {(me?.mode === "supabase" || me?.mode === "mvp") && (
-              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full bg-card" onClick={logout} aria-label="Sair" title="Sair">
-                <LogOut size={16} />
-              </Button>
-            )}
-            {onBankPage ? (
-              <Button className="h-10 rounded-full px-4 font-semibold" onClick={startConnect} disabled={connecting}>
-                <Plus size={16} />
-                <span className="hidden sm:inline">{connecting ? "Abrindo…" : "Conectar banco"}</span>
-              </Button>
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary/90 focus-visible:ring-3 focus-visible:ring-ring/50">
-                  <Plus size={16} />
-                  <span className="hidden sm:inline">Novo</span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
-                  <DropdownMenuLabel>Criar agora</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {QUICK_CREATE.map(({ href, label, Icon }) => (
-                    <DropdownMenuItem key={href} onClick={() => router.push(href)} className="gap-2.5 py-2">
-                      <Icon size={16} />
-                      {label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </header>
-
         {me?.demo && (
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-ink px-5 py-3 text-white print:hidden">
             <p className="text-sm"><span className="mr-2 rounded-full bg-lime px-2.5 py-0.5 text-xs font-semibold text-ink">DEMONSTRAÇÃO</span>Dados fictícios, só seus. Mexa à vontade: tudo some em 24 horas.</p>
@@ -313,6 +329,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {children}
       </div>
+
+      <SupportChat company={me?.client.name} demo={me?.demo} />
 
       {/* navegação inferior no celular */}
       <nav
@@ -354,6 +372,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SheetHeader>
           <div className="flex min-h-0 flex-1 flex-col p-3">
             <NavLinks groups={groups} isActive={isActive} onNavigate={() => setMenuOpen(false)} />
+            {(me?.mode === "supabase" || me?.mode === "mvp") && (
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-ink/10 pt-3">
+                <span className="min-w-0 truncate px-2 text-sm font-semibold">{me.client.name}</span>
+                <Button variant="outline" size="sm" className="h-9 shrink-0 rounded-full bg-white/70 px-3" onClick={logout}>
+                  <LogOut size={15} />
+                  Sair
+                </Button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>

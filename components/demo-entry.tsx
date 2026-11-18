@@ -8,7 +8,7 @@ import { BrandMark } from "@/components/site/site-header";
 const POINTS = [
   "Uma empresa de exemplo só sua, com clientes, vendas, estoque e contas já preenchidos",
   "Pode cadastrar, vender, cancelar e apagar à vontade: nada afeta ninguém",
-  "Veja também a prévia da prospecção (Radar B2B) e do atendimento com IA no WhatsApp",
+  "Veja também a prévia da prospecção (Radar Empresas) e da IA no WhatsApp",
   "Os dados são fictícios e somem sozinhos em 24 horas",
 ];
 

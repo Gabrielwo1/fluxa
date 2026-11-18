@@ -3,6 +3,7 @@ import {
   Radar,
   BarChart3,
   Boxes,
+  CreditCard,
   Factory,
   FileCheck,
   HandCoins,
@@ -66,8 +67,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Crescimento (prévia)",
     items: [
-      { href: "/prospeccao", label: "Prospecção · Radar B2B", Icon: Radar },
-      { href: "/atendimento", label: "Atendimento com IA", Icon: Bot },
+      { href: "/prospeccao", label: "Prospecção · Radar Empresas", Icon: Radar },
+      { href: "/atendimento", label: "IA WhatsApp", Icon: Bot },
     ],
   },
   {
@@ -84,6 +85,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Sistema",
     items: [
       { href: "/configuracoes", label: "Configurações", Icon: Settings },
+      { href: "/assinatura", label: "Assinatura", Icon: CreditCard },
       { href: "/modulos", label: "Módulos da suíte", Icon: LayoutGrid },
       { href: "/ajuda", label: "Ajuda e primeiros passos", Icon: LifeBuoy },
     ],
