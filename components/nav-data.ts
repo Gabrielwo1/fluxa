@@ -1,6 +1,4 @@
 import {
-  Bot,
-  Radar,
   BarChart3,
   Boxes,
   CreditCard,
@@ -62,13 +60,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
       { href: "/notas-fiscais", label: "Notas fiscais (MEI)", Icon: FileCheck },
-    ],
-  },
-  {
-    label: "Crescimento (prévia)",
-    items: [
-      { href: "/prospeccao", label: "Prospecção · Radar Empresas", Icon: Radar },
-      { href: "/atendimento", label: "IA WhatsApp", Icon: Bot },
     ],
   },
   {

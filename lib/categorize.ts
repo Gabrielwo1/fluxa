@@ -44,6 +44,9 @@ export function merchantKey(description: string): string {
 const CARD_BILL = /\bPAGAMENTO (DE )?FATURA\b|\bPGTO\.? FATURA\b/i;
 
 const KEYWORD_RULES: [RegExp, string][] = [
+  // débito de dívida (ex.: "Débito por dívida Faturas vencidas no Mercado Pago"): o banco manda como
+  // "Groceries" por causa da palavra "Mercado", mas é pagamento de dívida, não alimentação
+  [/D[ÉE]BITO POR D[ÍI]VIDA/i, "Loans and financing"],
   [/\bAIQFOME\b|\bIFOOD\b|\bRAPPI\b|UBER ?EATS|\bDELIVERY\b/i, "Food delivery"],
   [/\bPOSTOS?\b|COMBUSTIVE|\bSHELL\b|\bIPIRANGA\b|\bPETROBRAS\b|GASOLINA/i, "Gas stations"],
   [
