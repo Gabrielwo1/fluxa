@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "dev:motta": "LOCAL_CLIENT=motta next dev",
-    "erp:migrate": "tsx scripts/erp-migrate.ts"
+    "dev:miranda": "LOCAL_CLIENT=miranda next dev",
+    "erp:migrate": "tsx scripts/erp-migrate.ts",
+    "sync": "tsx scripts/sync.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

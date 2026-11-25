@@ -10,6 +10,7 @@ const MAPA = `Onde fica cada coisa (menu lateral e menu superior):
 - Vendas e orçamentos (/vendas): criar orçamento ou venda, confirmar, cancelar, duplicar. Botão "Novo" no topo cria venda, cliente, produto, compra e contas.
 - Clientes (/clientes) e Fornecedores (/fornecedores): cadastro com CPF/CNPJ, telefone, endereço. Dá para buscar dados pelo CNPJ.
 - Produtos e serviços (/produtos): preço de venda, custo, unidade, estoque mínimo e se controla estoque.
+- Integrações (/integracoes): mostra o que chegou do atendente do WhatsApp, da loja virtual e do Mercado Livre (clientes, pedidos, notas) e se algum envio deu erro.
 - Estoque (/estoque): saldo, entradas, saídas, ajustes e perdas. O saldo é a soma dos movimentos.
 - Compras (/compras): lançar compra de fornecedor; ao "receber", o estoque sobe, o custo é atualizado e nascem as contas a pagar.
 - A receber (/receber) e A pagar (/pagar): uma linha por parcela; "dar baixa" registra o pagamento.

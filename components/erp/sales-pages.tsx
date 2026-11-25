@@ -32,6 +32,9 @@ function periodRange(p: Period): { from?: string; to?: string } {
   return {};
 }
 
+const CHANNELS: Record<string, string> = { whatsapp: "WhatsApp", loja: "Loja virtual", mercadolivre: "Mercado Livre" };
+const channelName = (s: Sale) => (s.channel ? CHANNELS[s.channel] : undefined);
+
 const paymentTag = (s: Sale) => {
   if (s.status !== "confirmed") return null;
   if ((s.overdue ?? 0) > 0) return <Tag tone="bad">Atrasado</Tag>;
@@ -59,6 +62,7 @@ function List() {
     { key: "n", header: "Nº", cell: (s) => <span className="font-semibold">#{s.number}</span> },
     { key: "date", header: "Data", cell: (s) => fmtDate(s.issue_date) },
     { key: "customer", header: "Cliente", cell: (s) => s.customer_name ?? <span className="text-muted-foreground">Balcão</span> },
+    { key: "channel", header: "Canal", cell: (s) => channelName(s) ?? <span className="text-muted-foreground">Balcão</span> },
     { key: "items", header: "Itens", align: "right", cell: (s) => s.items_count },
     { key: "total", header: "Total", align: "right", cell: (s) => <span className="font-semibold">{money(s.total)}</span> },
     { key: "pay", header: "Pagamento", cell: (s) => paymentTag(s) ?? "—" },
@@ -129,7 +133,7 @@ function SaleRows({ sales, columns }: { sales: Sale[]; columns: Column<Sale>[] }
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate font-medium">#{s.number} · {s.customer_name ?? "Balcão"}</p>
-            <p className="text-xs text-muted-foreground">{fmtDate(s.issue_date)} · {s.items_count} item(ns)</p>
+            <p className="text-xs text-muted-foreground">{fmtDate(s.issue_date)} · {s.items_count} item(ns){channelName(s) ? ` · ${channelName(s)}` : ""}</p>
             <div className="mt-1.5 flex gap-1.5"><SaleStatusTag status={s.status} />{paymentTag(s)}</div>
           </div>
           <span className="font-semibold tabular-nums">{money(s.total)}</span>

@@ -18,6 +18,15 @@
         "dev:motta"
       ],
       "port": 3000
+    },
+    {
+      "name": "appfinance-miranda",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:miranda"
+      ],
+      "port": 3000
     }
   ]
 }

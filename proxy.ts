@@ -19,6 +19,8 @@ const PUBLIC = [
   "/api/cron",
   // notificações do Mercado Pago (sem login); a rota confere tudo na API do Mercado Pago
   "/api/billing/webhook",
+  // dados enviados pelo atendente, pela loja e por scripts; a rota confere a chave INGEST_KEY_<EMPRESA>
+  "/api/ingest",
 ];
 
 const isPublic = (path: string) =>

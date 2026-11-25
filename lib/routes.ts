@@ -18,6 +18,7 @@ const APP_ROUTES = [
   "/notas-fiscais",
   "/buscar",
   "/configuracoes",
+  "/integracoes",
   "/ajuda",
   "/modulos",
   "/prospeccao",

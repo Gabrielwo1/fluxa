@@ -13,7 +13,7 @@ export type SaleFilter = { status?: string; q?: string; from?: string; to?: stri
 
 const SALE_COLS = `s.id, s.number, s.customer_id, p.name as customer_name, s.status, s.issue_date::text as issue_date,
   s.subtotal::float8 as subtotal, s.discount::float8 as discount, s.total::float8 as total, s.payment_method, s.notes,
-  s.confirmed_at`;
+  s.confirmed_at, s.channel`;
 
 export async function listSales(tenant: string, f: SaleFilter = {}): Promise<Sale[]> {
   const where = ["s.tenant = $1"];
@@ -89,7 +89,7 @@ function totals(items: ItemInput[], discount: number) {
   return { lines, subtotal, total: round2(subtotal - discount) };
 }
 
-async function nextNumber(t: Tx, column: "next_sale_number" | "next_purchase_number"): Promise<number> {
+export async function nextNumber(t: Tx, column: "next_sale_number" | "next_purchase_number"): Promise<number> {
   const row = await t.one<{ n: number }>(
     `update erp_company set ${column} = ${column} + 1 where tenant = $1 returning ${column} - 1 as n`
   );
@@ -109,7 +109,7 @@ async function assertCustomer(t: Tx, id: string | null) {
   if (!row) throw new HttpError(404, "Cliente não encontrado.");
 }
 
-async function writeItems(t: Tx, saleId: string, lines: ReturnType<typeof totals>["lines"]) {
+export async function writeItems(t: Tx, saleId: string, lines: ReturnType<typeof totals>["lines"]) {
   await t.q(
     `delete from erp_sale_items where sale_id = $2 and exists (select 1 from erp_sales where id = $2 and tenant = $1)`,
     [saleId]
@@ -163,7 +163,7 @@ export async function updateSale(tenant: string, id: string, input: z.input<type
   return getSale(tenant, id);
 }
 
-async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confirmSchema>) {
+export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confirmSchema>) {
   const sale = await t.one<{ status: string; number: number; customer_id: string | null; total: number; customer_name: string | null; issue_date: string }>(
     `select s.status, s.number, s.customer_id, s.total::float8 as total, p.name as customer_name, s.issue_date::text as issue_date
        from erp_sales s left join erp_parties p on p.id = s.customer_id

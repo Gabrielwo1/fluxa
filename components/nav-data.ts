@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   LineChart,
   Package,
+  Plug,
   Receipt,
   Repeat,
   Settings,
@@ -75,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Sistema",
     items: [
+      { href: "/integracoes", label: "Integrações", Icon: Plug },
       { href: "/configuracoes", label: "Configurações", Icon: Settings },
       { href: "/assinatura", label: "Assinatura", Icon: CreditCard },
       { href: "/modulos", label: "Módulos da suíte", Icon: LayoutGrid },

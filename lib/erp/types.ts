@@ -103,6 +103,7 @@ export type Sale = {
   payment_method: string;
   notes: string;
   confirmed_at: string | null;
+  channel?: string;
   items_count?: number;
   received?: number;
   open?: number;
