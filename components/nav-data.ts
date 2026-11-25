@@ -15,6 +15,7 @@ import {
   Receipt,
   Repeat,
   Settings,
+  Spline,
   ShoppingCart,
   TrendingUp,
   Truck,
@@ -61,6 +62,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/relatorios", label: "Relatórios", Icon: BarChart3 },
       { href: "/notas-fiscais", label: "Notas fiscais (MEI)", Icon: FileCheck },
+      { href: "/conciliacao", label: "Conciliação", Icon: Spline },
     ],
   },
   {
