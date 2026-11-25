@@ -70,7 +70,8 @@ async function main() {
   await new Promise<void>((r) => server.listen(4020, r));
   const URL = "http://localhost:4020";
   Object.assign(process.env, {
-    ATENDENTE_URL_TESTE_SYNC: URL, ATENDENTE_CODE_TESTE_SYNC: "codigo-certo", ATENDENTE_SLUG_TESTE_SYNC: "veipar",
+    // endereço com caminho e slug com maiúscula, como foi digitado de verdade: o código normaliza
+    ATENDENTE_URL_TESTE_SYNC: `${URL}/veipar`, ATENDENTE_CODE_TESTE_SYNC: "codigo-certo", ATENDENTE_SLUG_TESTE_SYNC: "Veipar",
     SHOPIFY_DOMAIN_TESTE_SYNC: URL, SHOPIFY_CLIENT_ID_TESTE_SYNC: "id", SHOPIFY_CLIENT_SECRET_TESTE_SYNC: "secret",
     LOJA_SUPABASE_URL_TESTE_SYNC: URL, LOJA_SUPABASE_KEY_TESTE_SYNC: "k",
   });

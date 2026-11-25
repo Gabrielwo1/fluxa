@@ -2,6 +2,14 @@
 // (sufixo = slug em maiúsculas, como MVP_ACCESS_CODE_<SLUG>). Veja docs/INTEGRACOES.md.
 const suffix = (slug: string) => slug.toUpperCase().replace(/[^A-Z0-9]/g, "_");
 const slugOf = (suf: string) => suf.toLowerCase().replace(/_/g, "-");
+// Endereço digitado com caminho ou barra no fim (ex.: https://x.vercel.app/veipar): só o domínio interessa.
+const origin = (u: string) => {
+  try {
+    return new URL(u).origin;
+  } catch {
+    return u.replace(/\/+$/, "");
+  }
+};
 const env = (name: string, slug: string) => process.env[`${name}_${suffix(slug)}`]?.trim() || "";
 
 export type AtendenteConfig = { url: string; code: string; slug: string };
@@ -18,13 +26,13 @@ export type LojaConfig = {
 export type SyncConfig = { atendente: AtendenteConfig | null; loja: LojaConfig | null };
 
 export function syncConfig(tenant: string): SyncConfig {
-  const url = env("ATENDENTE_URL", tenant).replace(/\/$/, "");
+  const url = origin(env("ATENDENTE_URL", tenant));
   const code = env("ATENDENTE_CODE", tenant);
   const domain = env("SHOPIFY_DOMAIN", tenant);
   const clientId = env("SHOPIFY_CLIENT_ID", tenant);
   const clientSecret = env("SHOPIFY_CLIENT_SECRET", tenant);
   return {
-    atendente: url && code ? { url, code, slug: env("ATENDENTE_SLUG", tenant) || "veipar" } : null,
+    atendente: url && code ? { url, code, slug: (env("ATENDENTE_SLUG", tenant) || "veipar").toLowerCase() } : null,
     loja:
       domain && clientId && clientSecret
         ? {
