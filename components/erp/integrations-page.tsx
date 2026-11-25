@@ -2,12 +2,13 @@
 
 import { AlertTriangle, CheckCircle2, Globe, Loader2, MessageCircle, RefreshCw, ShoppingBag, Store } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Panel } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { call, useApi } from "@/lib/erp/client";
 import { fmtDate, money } from "@/lib/erp/format";
 import type { SourceOverview } from "@/lib/erp/services/ingest";
-import type { SyncStatus } from "@/lib/erp/services/sync";
+import type { SyncReport, SyncStatus } from "@/lib/erp/services/sync";
 import { ErrorNote, Kpi, LoadingRows, PageHeader, Tag } from "@/components/erp/ui";
 import { ErpGate } from "@/components/erp/gate";
 
@@ -36,7 +37,15 @@ function Inner() {
     setSyncing(true);
     setSyncError(null);
     try {
-      await call("POST", "/api/erp/integrations/sync");
+      const { reports } = await call<{ reports: SyncReport[] }>("POST", "/api/erp/integrations/sync");
+      // diz o que cada origem fez: sem isso, uma rodada que não achou nada parece um botão quebrado
+      for (const r of reports) {
+        const label = data?.sync.find((x) => x.source === r.source)?.label ?? r.source;
+        if (!r.ok) toast.error(`${label}: ${r.error ?? "falhou"}`);
+        else if (r.partial && r.from === "") toast.message(`${label}: ficou para a próxima rodada (tempo esgotado).`);
+        else toast.success(`${label}: ${r.created} novo(s), ${r.updated} atualizado(s)${r.failed ? `, ${r.failed} item(ns) com erro` : ""}.`);
+      }
+      if (reports.length === 0) toast.message("Nenhuma origem configurada para sincronizar.");
       reload();
     } catch (e) {
       setSyncError((e as Error).message);
