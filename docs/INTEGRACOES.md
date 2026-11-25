@@ -126,23 +126,24 @@ com erro não derruba os outros** do mesmo envio.
 
 Venda confirmada não muda de itens ou valores (regra do ERP): só acompanha pagamento e cancelamento.
 
-## 3. Estoque: relação com tudo que foi vendido
+## 3. Estoque: tudo que foi vendido dá saída
 
-Em **Estoque → Vendido × estoque** cada produto aparece com o que já vendeu (no período e no total), **por canal**
-(Mercado Livre, loja, WhatsApp, balcão), o ritmo por dia, o saldo que o Fluxa controla, quantos dias ele dura e
-quanto comprar para cobrir 30 dias. Situações: Repor (acaba em até 7 dias ou abaixo do mínimo), Zerado, Contagem velha
-(saiu mais do que a contagem tinha), Parado (tem saldo e não vendeu) e Em dia.
+Todo produto que chega pelas integrações já nasce **controlando estoque**: cada venda (Mercado Livre, loja, WhatsApp) dá
+**saída** na data da venda. Como ninguém lançou entrada, o saldo aparece **negativo**, que é exatamente o que já saiu.
+Quando você lançar uma compra (ou uma contagem em Ajustar), o saldo sobe e se acerta.
 
-O produto que chega pelas integrações nasce **sem controle de estoque** (o saldo real continua na loja e no
-marketplace). Para controlar, clique em **Controlar** e informe quanto tem hoje:
+- venda de canal **nunca é recusada** por falta de saldo (já aconteceu); venda lançada à mão continua exigindo saldo;
+- pedido cancelado no canal devolve a saída;
+- a migração 011 aplicou isso aos produtos que as integrações já tinham criado: passaram a controlar estoque e as vendas
+  já importadas deram saída. Produto cadastrado à mão não é alterado.
 
-- a contagem vale **a partir de hoje** (`stock_since`): a partir daí cada venda baixa o saldo sozinha;
-- vendas de dias **anteriores**, que ainda estão chegando do histórico, não baixam (já estavam na contagem);
-- venda que vem de um canal **nunca é recusada** por falta de saldo (já aconteceu): o saldo fica negativo e o produto
-  aparece como "Contagem velha" até uma nova contagem em Ajustar. Venda lançada à mão continua exigindo saldo;
-- pedido cancelado no canal devolve o estoque.
+Em **Estoque → Vendido × estoque** cada produto aparece com o vendido no período e no total **por canal**, o ritmo por
+dia, o saldo (negativo em vermelho), quantos dias dura e quanto comprar para cobrir 30 dias (já somando o negativo).
+Situações: Negativo, Zerado, Repor (acaba em até 7 dias ou abaixo do mínimo), Parado e Em dia. O botão **Controlar**
+só aparece para produto cadastrado à mão sem controle: liga o controle numa contagem de hoje (vendas de dias anteriores
+já estavam na contagem e não baixam).
 
-O Fluxa **não lê** o estoque do Mercado Livre nem da Shopify; o saldo vem da contagem + vendas.
+O Fluxa **não lê** o estoque do Mercado Livre nem da Shopify: o saldo é o que você lançar de entrada menos o que saiu.
 
 ## 4. Limites conhecidos
 

@@ -50,7 +50,7 @@ function Inner() {
     {
       key: "status",
       header: "Situação",
-      cell: (p) => ((p.stock ?? 0) <= 0 ? <Tag tone="bad">Zerado</Tag> : (p.stock ?? 0) <= p.min_stock ? <Tag tone="warn">Baixo</Tag> : <Tag tone="good">OK</Tag>),
+      cell: (p) => ((p.stock ?? 0) < 0 ? <Tag tone="bad">Negativo</Tag> : (p.stock ?? 0) === 0 ? <Tag tone="bad">Zerado</Tag> : (p.stock ?? 0) <= p.min_stock ? <Tag tone="warn">Baixo</Tag> : <Tag tone="good">OK</Tag>),
     },
     { key: "act", header: "", align: "right", cell: (p) => <Button size="sm" variant="outline" className="rounded-full" onClick={(e) => { e.stopPropagation(); setAdjusting(p); setOpen(true); }}>Ajustar</Button> },
   ];
@@ -80,7 +80,7 @@ function Inner() {
         <Kpi label="Produtos controlados" value={String(tracked.length)} />
         <Kpi label="Valor em estoque" value={money(total)} hint="Saldo de cada produto vezes o custo atual." />
         <Kpi label="Abaixo do mínimo" value={String(low.length)} tone={low.length ? "warn" : undefined} sub={low.length ? "Precisam de reposição" : "Nada em falta"} />
-        <Kpi label="Zerados" value={String(tracked.filter((p) => (p.stock ?? 0) <= 0).length)} tone={tracked.some((p) => (p.stock ?? 0) <= 0) ? "bad" : undefined} />
+        <Kpi label="Zerados ou negativos" value={String(tracked.filter((p) => (p.stock ?? 0) <= 0).length)} tone={tracked.some((p) => (p.stock ?? 0) <= 0) ? "bad" : undefined} />
       </div>
       <Panel>
         <div className="mb-4 flex flex-wrap items-center gap-3">

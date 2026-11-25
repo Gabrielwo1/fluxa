@@ -25,7 +25,7 @@ export type RelationRow = {
   per_day: number;
   // dias que o saldo dura no ritmo atual (null sem saldo ou sem vendas no período)
   cover_days: number | null;
-  // quanto comprar para cobrir 30 dias no ritmo atual
+  // quanto comprar para cobrir 30 dias no ritmo atual (já descontando o saldo negativo, se houver)
   suggested: number;
   last_sale: string | null;
   status: RelationStatus;
@@ -82,7 +82,8 @@ export async function stockRelation(tenant: string, days = 30): Promise<Relation
       const base = { id: r.id, sku: r.sku, name: r.name, unit: r.unit, track_stock: r.track_stock, min_stock: r.min_stock, stock: r.stock, sold_total: r.sold_total, sold_period: r.sold_period, by_channel, per_day, cover_days, last_sale: r.last_sale };
       return {
         ...base,
-        suggested: r.track_stock && per_day > 0 ? Math.max(0, Math.ceil(per_day * 30 - Math.max(r.stock ?? 0, 0))) : 0,
+        // saldo negativo conta: para sair do negativo e ainda cobrir 30 dias é preciso comprar o rombo mais o ritmo
+        suggested: r.track_stock && per_day > 0 ? Math.max(0, Math.ceil(per_day * 30 - (r.stock ?? 0))) : 0,
         status: statusOf(base),
       };
     }),

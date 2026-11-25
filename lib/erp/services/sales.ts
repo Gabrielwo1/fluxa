@@ -249,6 +249,7 @@ export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confir
       await addMove(t, {
         productId: i.product_id, qty: -i.qty, unitCost: p.cost_price, reason: "sale", refType: "sale", refId: id,
         note: `Venda #${sale.number}`,
+        at: opts.fromChannel ? sale.issue_date : undefined,
       });
     }
   }

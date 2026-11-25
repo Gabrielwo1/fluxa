@@ -229,7 +229,8 @@ async function upsertParty(t: Tx, source: Source, c: Customer): Promise<{ id: st
 
 // ---------- produtos ----------
 
-// Produto pelo SKU; se não existe, cria sem controle de estoque (o saldo real continua na loja/marketplace).
+// Produto pelo SKU; se não existe, cria já com controle de estoque: cada venda dá saída e, como ninguém lançou
+// entrada, o saldo aparece negativo (é o que já saiu). Compras ou uma contagem acertam depois.
 async function productFor(t: Tx, source: Source, sku: string, name: string, price: number): Promise<string | null> {
   if (!sku) return null;
   const find = () => t.one<{ id: string }>("select id from erp_products where tenant = $1 and lower(sku) = lower($2)", [sku]);
@@ -237,7 +238,7 @@ async function productFor(t: Tx, source: Source, sku: string, name: string, pric
   if (found) return found.id;
   await t.q(
     `insert into erp_products (tenant, sku, name, kind, track_stock, sale_price, notes)
-     values ($1, $2, $3, 'product', false, $4, $5)
+     values ($1, $2, $3, 'product', true, $4, $5)
      on conflict (tenant, lower(sku)) where sku <> '' do nothing`,
     [sku, name.slice(0, 200), price, `Criado pela integração: ${SOURCE_LABEL[source]}.`]
   );

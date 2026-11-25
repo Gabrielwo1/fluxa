@@ -39,12 +39,13 @@ export async function allowsNegative(t: Tx): Promise<boolean> {
 // Registra uma movimentação dentro de uma transação. Quem chama decide o motivo e a referência.
 export async function addMove(
   t: Tx,
-  m: { productId: string; qty: number; unitCost: number; reason: StockReason; refType?: string; refId?: string; note?: string }
+  // "at": dia em que o fato aconteceu (venda importada do histórico); sem ele vale agora
+  m: { productId: string; qty: number; unitCost: number; reason: StockReason; refType?: string; refId?: string; note?: string; at?: string }
 ) {
   await t.q(
-    `insert into erp_stock_moves (tenant, product_id, qty, unit_cost, reason, ref_type, ref_id, note)
-     values ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [m.productId, m.qty, m.unitCost, m.reason, m.refType ?? null, m.refId ?? null, m.note ?? ""]
+    `insert into erp_stock_moves (tenant, product_id, qty, unit_cost, reason, ref_type, ref_id, note, created_at)
+     values ($1,$2,$3,$4,$5,$6,$7,$8, case when $9::date is null then now() else ($9::date + time '12:00') at time zone 'America/Sao_Paulo' end)`,
+    [m.productId, m.qty, m.unitCost, m.reason, m.refType ?? null, m.refId ?? null, m.note ?? "", m.at ?? null]
   );
 }
 

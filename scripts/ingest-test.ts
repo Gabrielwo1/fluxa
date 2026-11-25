@@ -76,9 +76,10 @@ async function main() {
   const l = await one<{ id: string; total: number; subtotal: number; discount: number }>(T, "select id, total::float8 as total, subtotal::float8 as subtotal, discount::float8 as discount from erp_sales where tenant = $1 and channel = 'loja'");
   assert.equal(l?.total, 215);
   const prod = await one<{ track_stock: boolean }>(T, "select track_stock from erp_products where tenant = $1 and sku = 'VEI-500'");
-  assert.equal(prod?.track_stock, false);
-  assert.equal((await q(T, "select 1 from erp_stock_moves where tenant = $1")).length, 0);
-  ok("loja: frete vira item, total declarado fecha, produto novo não mexe em estoque");
+  assert.equal(prod?.track_stock, true);
+  const out = await q<{ qty: number }>(T, "select qty::float8 as qty from erp_stock_moves where tenant = $1 and reason = 'sale'");
+  assert.deepEqual(out.map((m) => m.qty), [-2]); // a venda de 2 un dá saída: sem entrada cadastrada o saldo fica negativo
+  ok("loja: frete vira item, total declarado fecha, produto novo já controla estoque e a venda dá saída");
 
   // reenvio idêntico: nada muda
   r = await ingest(T, loja);

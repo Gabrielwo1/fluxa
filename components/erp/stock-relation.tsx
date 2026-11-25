@@ -20,19 +20,20 @@ const CHANNELS = Object.keys(CHANNEL) as Channel[];
 
 const STATUS: Record<RelationStatus, { label: string; tone: "neutral" | "good" | "bad" | "warn" | "info"; hint: string }> = {
   sem_controle: { label: "Sem controle", tone: "neutral", hint: "O Fluxa ainda não controla o saldo deste produto. Clique em Controlar e informe quanto tem hoje." },
-  negativo: { label: "Contagem velha", tone: "bad", hint: "Saiu mais do que a contagem tinha. Refaça a contagem em Ajustar." },
+  negativo: { label: "Negativo", tone: "bad", hint: "Saiu mais do que entrou: não há estoque cadastrado. Lance a compra (ou uma contagem em Ajustar) para acertar o saldo." },
   zerado: { label: "Zerado", tone: "bad", hint: "Sem saldo." },
   repor: { label: "Repor", tone: "warn", hint: "Acaba em até 7 dias no ritmo atual, ou está abaixo do mínimo." },
   sem_giro: { label: "Parado", tone: "info", hint: "Tem saldo e não vendeu no período." },
   ok: { label: "Em dia", tone: "good", hint: "Saldo suficiente para o ritmo atual." },
 };
 
-type Filter = "all" | "act" | "none" | "idle";
+type Filter = "all" | "act" | "none" | "idle" | "neg";
 const FILTERS: Record<Filter, (r: RelationRow) => boolean> = {
   all: () => true,
   act: (r) => ["repor", "zerado", "negativo"].includes(r.status),
   none: (r) => r.status === "sem_controle",
   idle: (r) => r.status === "sem_giro",
+  neg: (r) => r.status === "negativo",
 };
 
 export function StockRelation() {
@@ -52,6 +53,7 @@ export function StockRelation() {
   const sold = all.reduce((s, r) => s + r.sold_period, 0);
   const toAct = all.filter(FILTERS.act).length;
   const untracked = all.filter(FILTERS.none).length;
+  const negatives = all.filter((r) => r.status === "negativo").length;
   const maxSold = Math.max(1, ...all.map((r) => r.sold_period));
 
   const columns: Column<RelationRow>[] = [
@@ -70,14 +72,14 @@ export function StockRelation() {
       {error && <ErrorNote message={error} onRetry={reload} />}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label={`Unidades vendidas (${days} dias)`} value={qtyFmt(sold)} sub={`${all.filter((r) => r.sold_period > 0).length} produto(s) com venda`} />
-        <Kpi label="Para repor" value={String(toAct)} tone={toAct ? "warn" : undefined} sub={toAct ? "Acabam logo, zerados ou com contagem velha" : "Nada urgente"} />
-        <Kpi label="Sem controle de estoque" value={String(untracked)} tone={untracked ? "warn" : undefined} hint="Produtos que vendem mas o Fluxa não sabe quanto têm. Informe a contagem de hoje." />
+        <Kpi label="Para repor" value={String(toAct)} tone={toAct ? "warn" : undefined} sub={toAct ? `${negatives} com saldo negativo` : "Nada urgente"} />
+        <Kpi label="Saiu do estoque (total)" value={qtyFmt(all.reduce((s, r) => s + r.sold_total, 0))} sub={`${all.length} produto(s)`} hint="Tudo que as vendas já tiraram do estoque, em unidades." />
         <Kpi label="Parados" value={String(all.filter(FILTERS.idle).length)} sub="Com saldo e sem venda no período" />
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchBox value={search} onChange={setSearch} placeholder="Buscar produto ou SKU…" className="w-full sm:max-w-xs sm:flex-1" />
         <Chips label="Período" value={days} onChange={setDays} options={[{ value: "7", label: "7 dias" }, { value: "30", label: "30 dias" }, { value: "90", label: "90 dias" }, { value: "180", label: "6 meses" }]} />
-        <Chips label="Mostrar" value={filter} onChange={setFilter} options={[{ value: "all", label: "Todos" }, { value: "act", label: `Repor (${toAct})` }, { value: "none", label: `Sem controle (${untracked})` }, { value: "idle", label: "Parados" }]} />
+        <Chips label="Mostrar" value={filter} onChange={setFilter} options={[{ value: "all", label: "Todos" }, { value: "act", label: `Repor (${toAct})` }, { value: "none", label: `Sem controle (${untracked})` }, { value: "neg", label: `Negativos (${negatives})` }, { value: "idle", label: "Parados" }]} />
       </div>
       <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {CHANNELS.map((c) => <li key={c} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: CHANNEL[c].color }} />{CHANNEL[c].label}</li>)}
