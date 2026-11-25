@@ -3,7 +3,7 @@ import { one, q } from "@/lib/erp/db";
 import { atendente, mercadolivre } from "@/lib/erp/connectors/atendente";
 import { loja } from "@/lib/erp/connectors/loja";
 import { syncConfig } from "@/lib/erp/connectors/config";
-import type { Connector, ConnectorCtx } from "@/lib/erp/connectors/types";
+import { addDays as addDaysIso, type Connector, type ConnectorCtx } from "@/lib/erp/connectors/types";
 import { ingest, SOURCE_LABEL, type Source } from "@/lib/erp/services/ingest";
 import { mvpClientName } from "@/lib/mvp";
 
@@ -13,15 +13,17 @@ import { mvpClientName } from "@/lib/mvp";
 // pagamentos, cancelamentos e notas fiscais que chegam depois do pedido.
 
 const todayBr = () => new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
-const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+const addDays = addDaysIso;
 // primeira rodada de uma origem: quantos dias de histórico trazer (o resto vem com `npm run sync -- --from`)
 const BACKFILL_DAYS = () => Number(process.env.SYNC_BACKFILL_DAYS) || 60;
 
+// A loja e o atendente são rápidos; o Mercado Livre (3 consultas por pedido novo) fica por último e usa o tempo que sobrar.
 export function connectorsFor(tenant: string): Connector[] {
   const cfg = syncConfig(tenant);
   return [
-    ...(cfg.atendente ? [atendente(cfg.atendente), mercadolivre(cfg.atendente)] : []),
+    ...(cfg.atendente ? [atendente(cfg.atendente)] : []),
     ...(cfg.loja ? [loja(cfg.loja)] : []),
+    ...(cfg.atendente ? [mercadolivre(cfg.atendente)] : []),
   ];
 }
 
@@ -61,32 +63,74 @@ const ctxFor = (tenant: string, warnings: string[]): ConnectorCtx => ({
   },
 });
 
+type Interval = { from: string; to: string };
+
+// Junta as janelas prontas ao intervalo que já existia e fica com o bloco contínuo mais recente.
+function mergeIntervals(list: Interval[]): Interval | null {
+  if (list.length === 0) return null;
+  const sorted = [...list].sort((p, q) => p.from.localeCompare(q.from));
+  const blocks: Interval[] = [{ ...sorted[0] }];
+  for (const w of sorted.slice(1)) {
+    const last = blocks[blocks.length - 1];
+    if (w.from <= addDays(last.to, 1)) last.to = w.to > last.to ? w.to : last.to;
+    else blocks.push({ ...w });
+  }
+  return blocks[blocks.length - 1];
+}
+
+// Uma origem numa rodada: primeiro os dias recentes (de onde parou até hoje), depois o histórico para trás,
+// sempre do mais novo para o mais antigo. O intervalo já buscado [synced_from, synced_until] é gravado a
+// cada janela pronta; se o tempo acabar, a próxima rodada continua dali.
 async function runConnector(tenant: string, c: Connector, opts: { from?: string; deadline: number }): Promise<SyncReport> {
-  const to = todayBr();
-  const state = await one<{ synced_until: string | null }>(
+  const today = todayBr();
+  const state = await one<{ synced_from: string | null; synced_until: string | null }>(
     tenant,
-    "select synced_until::text as synced_until from erp_sync_state where tenant = $1 and source = $2",
+    "select synced_from::text as synced_from, synced_until::text as synced_until from erp_sync_state where tenant = $1 and source = $2",
     [c.source]
   );
-  const from = opts.from ?? (state?.synced_until ? addDays(state.synced_until, -c.overlapDays) : addDays(to, -BACKFILL_DAYS()));
-  const report: SyncReport = { source: c.source, ok: true, partial: false, from, created: 0, updated: 0, failed: 0, error: null };
+  const saved: Interval | null = state?.synced_until ? { from: state.synced_from ?? state.synced_until, to: state.synced_until } : null;
+  const target = opts.from ?? addDays(today, -BACKFILL_DAYS());
+  // primeira vez: só uma semana para o que é recente aparecer logo; o histórico vem na sequência
+  const recentFrom = saved ? addDays(saved.to, -c.overlapDays) : addDays(today, -6);
+  const report: SyncReport = { source: c.source, ok: true, partial: false, from: recentFrom, created: 0, updated: 0, failed: 0, error: null };
   const warnings: string[] = [];
-  let until: string | null = null;
+  const done: Interval[] = saved ? [saved] : [];
   let error: string | null = null;
+  const ctx = ctxFor(tenant, warnings);
 
-  try {
-    for await (const chunk of c.run(ctxFor(tenant, warnings), from, to)) {
+  const persist = async () => {
+    const cov = mergeIntervals(done);
+    if (!cov) return;
+    await q(
+      tenant,
+      `insert into erp_sync_state (tenant, source, synced_from, synced_until, last_run_at) values ($1, $2, $3, $4, now())
+       on conflict (tenant, source) do update set synced_from = excluded.synced_from, synced_until = excluded.synced_until, last_run_at = now()`,
+      [c.source, cov.from, cov.to]
+    );
+  };
+
+  async function pass(from: string, to: string): Promise<boolean> {
+    for await (const chunk of c.run(ctx, from, to)) {
       const r = await ingest(tenant, { source: c.source, ...chunk.payload });
       report.created += r.customers.created + r.orders.created + r.invoices.created;
       report.updated += r.customers.updated + r.orders.updated + r.invoices.updated + r.stats;
       report.failed += r.failed;
       // item que falha (ex.: estoque insuficiente) fica no histórico de envios e é tentado de novo na janela recente
-      if (chunk.until) until = chunk.until;
-      if (Date.now() > opts.deadline) {
-        report.partial = true;
-        break;
+      if (chunk.window) {
+        done.push(chunk.window);
+        await persist();
       }
+      if (Date.now() > opts.deadline) return false;
     }
+    return true;
+  }
+
+  try {
+    let finished = await pass(recentFrom, today);
+    const cov = mergeIntervals(done);
+    // histórico: tudo que está antes do que já foi buscado, até a data pedida
+    if (finished && cov && cov.from > target) finished = await pass(target, addDays(cov.from, -1));
+    report.partial = !finished;
   } catch (e) {
     error = (e as Error).message.slice(0, 500);
     report.ok = false;
@@ -96,14 +140,12 @@ async function runConnector(tenant: string, c: Connector, opts: { from?: string;
   const note = [error, ...warnings.map((w) => `Aviso: ${w}`)].filter(Boolean).join(" · ") || null;
   await q(
     tenant,
-    `insert into erp_sync_state (tenant, source, synced_until, last_run_at, last_ok_at, last_error)
-     values ($1, $2, $3, now(), case when $4 then now() end, $5)
+    `insert into erp_sync_state (tenant, source, last_run_at, last_ok_at, last_error) values ($1, $2, now(), case when $3 then now() end, $4)
      on conflict (tenant, source) do update set
-       synced_until = coalesce(excluded.synced_until, erp_sync_state.synced_until),
        last_run_at = now(),
-       last_ok_at = case when $4 then now() else erp_sync_state.last_ok_at end,
-       last_error = $5`,
-    [c.source, until, report.ok, note]
+       last_ok_at = case when $3 then now() else erp_sync_state.last_ok_at end,
+       last_error = $4`,
+    [c.source, report.ok, note]
   );
   return report;
 }
@@ -112,7 +154,7 @@ async function runConnector(tenant: string, c: Connector, opts: { from?: string;
 // o que sobrar continua na próxima rodada, de onde parou.
 export async function syncTenant(tenant: string, opts: { from?: string; budgetMs?: number; sources?: Source[] } = {}): Promise<SyncReport[]> {
   await ensureCompany(tenant, mvpClientName(tenant));
-  const deadline = Date.now() + (opts.budgetMs ?? 45_000);
+  const deadline = Date.now() + (opts.budgetMs ?? 240_000);
   const reports: SyncReport[] = [];
   for (const c of connectorsFor(tenant)) {
     if (opts.sources && !opts.sources.includes(c.source)) continue;
@@ -125,17 +167,17 @@ export async function syncTenant(tenant: string, opts: { from?: string; budgetMs
   return reports;
 }
 
-export type SyncStatus = { source: Source; label: string; configured: boolean; synced_until: string | null; last_run_at: string | null; last_ok_at: string | null; last_error: string | null };
+export type SyncStatus = { source: Source; label: string; configured: boolean; synced_from: string | null; backfill_start: string; synced_until: string | null; last_run_at: string | null; last_ok_at: string | null; last_error: string | null };
 
 export async function syncStatus(tenant: string): Promise<SyncStatus[]> {
   const configured = new Set(connectorsFor(tenant).map((c) => c.source));
-  const rows = await q<Omit<SyncStatus, "source" | "label" | "configured"> & { source: Source }>(
+  const rows = await q<Omit<SyncStatus, "source" | "label" | "configured" | "backfill_start"> & { source: Source }>(
     tenant,
-    "select source, synced_until::text as synced_until, last_run_at, last_ok_at, last_error from erp_sync_state where tenant = $1",
+    "select source, synced_from::text as synced_from, synced_until::text as synced_until, last_run_at, last_ok_at, last_error from erp_sync_state where tenant = $1",
     []
   );
   return (["atendente", "mercadolivre", "loja"] as Source[]).map((source) => {
     const r = rows.find((x) => x.source === source);
-    return { source, label: SOURCE_LABEL[source], configured: configured.has(source), synced_until: r?.synced_until ?? null, last_run_at: r?.last_run_at ?? null, last_ok_at: r?.last_ok_at ?? null, last_error: r?.last_error ?? null };
+    return { source, label: SOURCE_LABEL[source], configured: configured.has(source), synced_from: r?.synced_from ?? r?.synced_until ?? null, backfill_start: addDays(todayBr(), -BACKFILL_DAYS()), synced_until: r?.synced_until ?? null, last_run_at: r?.last_run_at ?? null, last_ok_at: r?.last_ok_at ?? null, last_error: r?.last_error ?? null };
   });
 }

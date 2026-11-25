@@ -1,5 +1,5 @@
 import type { LojaConfig } from "@/lib/erp/connectors/config";
-import { chunked, daysBetween, readJson, type Connector } from "@/lib/erp/connectors/types";
+import { addDays, chunked, daysBetween, readJson, type Connector } from "@/lib/erp/connectors/types";
 import { digits } from "@/lib/erp/validators";
 
 // Loja virtual da Veipar (Shopify). O Fluxa lê os pedidos direto na Admin API da Shopify, com o mesmo app
@@ -8,7 +8,6 @@ import { digits } from "@/lib/erp/validators";
 // aceita o domínio (veipar.myshopify.com) ou um endereço completo (só os testes usam o segundo)
 const base = (cfg: LojaConfig) => (/^https?:/.test(cfg.shopDomain) ? cfg.shopDomain : `https://${cfg.shopDomain}`);
 const brDay = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
-const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 let cached: { key: string; token: string; expires: number } | null = null;
 
@@ -134,13 +133,13 @@ export const loja = (cfg: LojaConfig): Connector => ({
     let pii = true;
     let after: string | null = null;
     const byDay = new Map<string, { orders: number; revenue: number }>();
-    // sortKey UPDATED_AT pega pedido que mudou de situação, não só os novos
-    const q = `updated_at:>='${from}T00:00:00-03:00'`;
+    // UPDATED_AT (do mais novo para o mais antigo) pega também o pedido que mudou de situação, não só os novos
+    const q = `updated_at:>='${from}T00:00:00-03:00' AND updated_at:<'${addDays(to, 1)}T00:00:00-03:00'`;
     for (;;) {
       type Page = { orders: { nodes: ShopifyOrder[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } };
       let data: Page;
       try {
-        data = await graphql<Page>(cfg, `query Pedidos($q: String!, $after: String) { orders(first: 100, after: $after, query: $q, sortKey: UPDATED_AT) { nodes { ${FIELDS(pii)} } pageInfo { hasNextPage endCursor } } }`, { q, after });
+        data = await graphql<Page>(cfg, `query Pedidos($q: String!, $after: String) { orders(first: 100, after: $after, query: $q, sortKey: UPDATED_AT, reverse: true) { nodes { ${FIELDS(pii)} } pageInfo { hasNextPage endCursor } } }`, { q, after });
       } catch (e) {
         if (!pii || !/ACCESS_DENIED|protected|not approved/i.test((e as Error).message)) throw e;
         // o app não tem acesso aos dados pessoais: segue só com os pedidos
@@ -184,6 +183,6 @@ export const loja = (cfg: LojaConfig): Connector => ({
         revenue: Math.round((o?.revenue ?? 0) * 100) / 100,
       });
     }
-    yield { payload: { stats }, until: to };
+    yield { payload: { stats }, window: { from, to } };
   },
 });

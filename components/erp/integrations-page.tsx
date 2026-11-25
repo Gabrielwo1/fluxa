@@ -42,8 +42,8 @@ function Inner() {
       for (const r of reports) {
         const label = data?.sync.find((x) => x.source === r.source)?.label ?? r.source;
         if (!r.ok) toast.error(`${label}: ${r.error ?? "falhou"}`);
-        else if (r.partial && r.from === "") toast.message(`${label}: ficou para a próxima rodada (tempo esgotado).`);
-        else toast.success(`${label}: ${r.created} novo(s), ${r.updated} atualizado(s)${r.failed ? `, ${r.failed} item(ns) com erro` : ""}.`);
+        else if (r.from === "") toast.message(`${label}: ficou para a próxima rodada (tempo esgotado).`);
+        else toast.success(`${label}: ${r.created} novo(s), ${r.updated} atualizado(s)${r.failed ? `, ${r.failed} item(ns) com erro` : ""}${r.partial ? ". Ainda há histórico a importar: clique de novo para continuar." : "."}`);
       }
       if (reports.length === 0) toast.message("Nenhuma origem configurada para sincronizar.");
       reload();
@@ -103,6 +103,8 @@ function SourceCard({ o, sync }: { o: SourceOverview; sync?: SyncStatus }) {
   const Icon = ICON[o.source];
   const f = o.last_30d;
   const failing = o.recent[0]?.failed ?? 0;
+  // o histórico ainda não chegou até a data pedida
+  const importing = Boolean(sync?.configured && sync.synced_from && sync.synced_from > sync.backfill_start);
   const lastErrors = o.recent.find((r) => r.failed > 0)?.errors.slice(0, 3) ?? [];
   return (
     <Panel>
@@ -114,7 +116,7 @@ function SourceCard({ o, sync }: { o: SourceOverview; sync?: SyncStatus }) {
             <p className="text-xs text-muted-foreground">{o.last_sync ? `Último envio: ${when(o.last_sync)}` : "Nada recebido ainda"}</p>
           </div>
         </div>
-        {!o.last_sync ? <Tag>Aguardando</Tag> : failing > 0 ? <Tag tone="warn">Com erros</Tag> : <Tag tone="good">Recebendo</Tag>}
+        {!o.last_sync ? <Tag>Aguardando</Tag> : failing > 0 ? <Tag tone="warn">Com erros</Tag> : importing ? <Tag tone="info">Importando histórico</Tag> : <Tag tone="good">Em dia</Tag>}
       </div>
       <p className="mb-3 text-sm text-muted-foreground">{WHAT[o.source]}</p>
       {sync && <SyncLine sync={sync} />}
@@ -161,8 +163,15 @@ function SyncLine({ sync }: { sync: SyncStatus }) {
     <div className="mb-3 rounded-xl bg-muted px-3 py-2 text-xs">
       <p className="flex items-center gap-1.5 text-muted-foreground">
         <RefreshCw size={12} />
-        {sync.last_ok_at ? `Buscado em ${when(sync.last_ok_at)} (até ${fmtDate(sync.synced_until)})` : "Ainda não buscou"} · a cada poucas horas
+        {sync.last_ok_at ? `Atualizado em ${when(sync.last_ok_at)}` : "Ainda não buscou"} · a cada poucas horas
       </p>
+      {sync.synced_from && sync.synced_until && (
+        <p className="mt-1 text-muted-foreground">
+          {sync.synced_from > sync.backfill_start
+            ? `Já tem de ${fmtDate(sync.synced_from)} até ${fmtDate(sync.synced_until)}. O histórico até ${fmtDate(sync.backfill_start)} continua nas próximas rodadas ou ao clicar em Sincronizar agora.`
+            : `Histórico completo desde ${fmtDate(sync.synced_from)}.`}
+        </p>
+      )}
       {sync.last_error && !isWarningOnly && <p className="mt-1 font-medium text-bad">Última tentativa falhou: {error}</p>}
       {[...(isWarningOnly ? [error.replace(/^Aviso: /, "")] : []), ...warnings].map((w, i) => <p key={i} className="mt-1 text-[var(--c-fixed)]">Aviso: {w}</p>)}
     </div>

@@ -22,10 +22,17 @@ Nada nos repositórios do atendente e da loja foi alterado: o Fluxa usa o que el
 | **Mercado Livre** | **Pelo atendente**, que já tem a conta conectada e renova os tokens: usa a rota `?r=api` dele | Pedidos, comprador (CPF/CNPJ, endereço de entrega), pagamento e **nota fiscal (NF-e)** de cada pedido |
 | **Loja** | Admin API da Shopify (mesmo app da loja) + o banco onde a loja grava os acessos | Pedidos, clientes e, por dia, visitas, carrinho, checkout e pedidos (o funil) |
 
-Como funciona a cada rodada: cada origem lembra **até que dia já foi buscada** e relê só os últimos dias
-(2 no atendente, 15 no Mercado Livre por causa da nota que sai depois, 3 na loja), o suficiente para pegar pagamento,
-cancelamento e nota tardia. Pedido do Mercado Livre que já está no Fluxa não repete a consulta de endereço e nota.
-A primeira rodada traz `SYNC_BACKFILL_DAYS` dias (padrão 60); o histórico maior vem com o comando abaixo.
+Como funciona a cada rodada: cada origem lembra **o intervalo de dias já buscado** (`synced_from` a `synced_until`,
+sempre contínuo até hoje) e anda do **dia mais novo para o mais antigo**, em janelas de 7 dias:
+
+1. primeiro o **recente**: de onde parou até hoje, relendo os últimos dias (2 no atendente, 15 no Mercado Livre por
+   causa da nota que sai depois, 3 na loja) para pegar pagamento, cancelamento e nota tardia. Na primeira vez são 7 dias,
+   para o que acabou de vender aparecer logo;
+2. depois o **histórico**, para trás, até `SYNC_BACKFILL_DAYS` dias (padrão 60).
+
+Cada janela pronta é gravada na hora. Se o tempo da rodada acabar (240 s), a próxima continua de onde parou; o card mostra
+"Importando histórico" e até que data já tem. Pedido do Mercado Livre que já está no Fluxa não repete a consulta de
+endereço e nota, então reler é barato. O histórico maior vem com o comando abaixo.
 
 ### Ligar (uma vez)
 

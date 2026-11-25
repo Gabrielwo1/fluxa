@@ -1,5 +1,5 @@
 import type { AtendenteConfig } from "@/lib/erp/connectors/config";
-import { chunked, daysBetween, readJson, type Connector, type ConnectorCtx } from "@/lib/erp/connectors/types";
+import { chunked, daysBetween, readJson, windowsNewestFirst, type Connector, type ConnectorCtx } from "@/lib/erp/connectors/types";
 
 // Atendente Syntax da Veipar: o Fluxa entra na API do painel com o código de acesso (a mesma sessão de 12 h
 // que a equipe usa) e lê o que o atendente já tem. O Mercado Livre vem junto, porque a conta dele está
@@ -47,7 +47,9 @@ export const atendente = (cfg: AtendenteConfig): Connector => ({
   overlapDays: 2,
   async *run(_ctx, from, to) {
     const s = await login(cfg);
-    const days = Math.min(Math.max(daysBetween(from, to) + 1, 1), 3650);
+    // a API do painel filtra "dos últimos N dias até agora": traz tudo desde "from" e o intervalo vale por inteiro
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const days = Math.min(Math.max(daysBetween(from, today) + 1, 1), 3650);
     const data = await s.get<{ contacts: Contact[]; sales: SaleRow[] }>(`/api/contacts?days=${days}`);
     const names = new Map(data.contacts.map((c) => [c.wa_id, c.customer_info?.nome_completo || c.name || ""]));
 
@@ -72,8 +74,8 @@ export const atendente = (cfg: AtendenteConfig): Connector => ({
 
     for (const part of chunked(customers, 200)) yield { payload: { customers: part } };
     const parts = chunked(orders, 100);
-    for (let i = 0; i < parts.length; i++) yield { payload: { orders: parts[i] }, until: i === parts.length - 1 ? to : undefined };
-    if (parts.length === 0) yield { payload: {}, until: to };
+    for (let i = 0; i < parts.length; i++) yield { payload: { orders: parts[i] }, window: i === parts.length - 1 ? { from, to } : undefined };
+    if (parts.length === 0) yield { payload: {}, window: { from, to } };
   },
 });
 
@@ -94,17 +96,6 @@ type MlOrder = {
 };
 
 const orderStatus = (s: string) => (s === "paid" ? "paid" : s === "cancelled" || s === "invalid" ? "canceled" : "pending");
-
-// pedidos de um mês por vez: a busca do Mercado Livre limita a paginação
-export function monthWindows(from: string, to: string): { from: string; to: string }[] {
-  const out: { from: string; to: string }[] = [];
-  for (let d = new Date(`${from.slice(0, 7)}-01T00:00:00Z`); d <= new Date(`${to}T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() + 1)) {
-    const start = d.toISOString().slice(0, 10);
-    const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
-    out.push({ from: start < from ? from : start, to: end > to ? to : end });
-  }
-  return out;
-}
 
 async function pool<T, R>(list: T[], limit: number, fn: (x: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(list.length);
@@ -195,11 +186,12 @@ export const mercadolivre = (cfg: AtendenteConfig): Connector => ({
     const status = await s.get<{ account: unknown }>("/api/mercadolivre?r=status");
     if (!status.account) throw new Error("A conta do Mercado Livre não está conectada no atendente.");
 
-    for (const w of monthWindows(from, to)) {
+    // semana por semana, da mais recente para a mais antiga: o que acabou de vender aparece primeiro
+    for (const w of windowsNewestFirst(from, to, 7)) {
       const orders: MlOrder[] = [];
       for (let offset = 0; ; offset += 50) {
         const path =
-          `/orders/search?seller={seller_id}&sort=date_asc&limit=50&offset=${offset}` +
+          `/orders/search?seller={seller_id}&sort=date_desc&limit=50&offset=${offset}` +
           `&order.date_created.from=${encodeURIComponent(`${w.from}T00:00:00.000-03:00`)}&order.date_created.to=${encodeURIComponent(`${w.to}T23:59:59.999-03:00`)}`;
         const page = await s.get<{ data: { results: MlOrder[]; paging: { total: number } } }>(`/api/mercadolivre?r=api&path=${encodeURIComponent(path)}`);
         orders.push(...(page.data.results ?? []));
@@ -209,10 +201,10 @@ export const mercadolivre = (cfg: AtendenteConfig): Connector => ({
       for (let i = 0; i < slices.length; i++) {
         const ids = slices[i].map((o) => String(o.id));
         const [sales, invoices] = await Promise.all([ctx.known("sale", "mercadolivre", ids), ctx.known("invoice", "mercadolivre", ids)]);
-        const mapped = await pool(slices[i], 4, (o) => mlOrderPayload(s, o, ctx, sales.has(String(o.id)), invoices.has(String(o.id))));
-        yield { payload: { orders: mapped }, until: i === slices.length - 1 ? w.to : undefined };
+        const mapped = await pool(slices[i], 8, (o) => mlOrderPayload(s, o, ctx, sales.has(String(o.id)), invoices.has(String(o.id))));
+        yield { payload: { orders: mapped }, window: i === slices.length - 1 ? w : undefined };
       }
-      if (slices.length === 0) yield { payload: {}, until: w.to };
+      if (slices.length === 0) yield { payload: {}, window: w };
     }
   },
 });

@@ -9,6 +9,7 @@ import { Panel } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { call, qs, useApi } from "@/lib/erp/client";
 import type { Account, Sale, Title } from "@/lib/erp/types";
+import type { SalesSummary } from "@/lib/erp/services/sales";
 import { fmtDate, money, monthStartIso, qtyFmt, todayIso, addDaysIso } from "@/lib/erp/format";
 import { Chips, ConfirmDialog, EmptyState, ErrorNote, FormDialog, Kpi, LoadingRows, PageHeader, SearchBox, Tag, useDebounced } from "@/components/erp/ui";
 import { DataTable, type Column } from "@/components/erp/data-table";
@@ -52,11 +53,14 @@ function List() {
   const [period, setPeriod] = useState<Period>("month");
   const debounced = useDebounced(q);
   const range = periodRange(period);
-  const { data, error, loading, reload } = useApi<{ sales: Sale[] }>(`/api/erp/sales${qs({ q: debounced, status, ...range })}`);
+  // a lista cresce de 100 em 100; os números do topo vêm do período inteiro (summary), nunca só das linhas carregadas
+  const [limit, setLimit] = useState(100);
+  const { data, error, loading, reload } = useApi<{ sales: Sale[]; summary: SalesSummary }>(`/api/erp/sales${qs({ q: debounced, status, ...range, limit })}`);
   const sales = useMemo(() => data?.sales ?? [], [data]);
-  const confirmed = sales.filter((s) => s.status === "confirmed");
-  const revenue = confirmed.reduce((s, x) => s + x.total, 0);
-  const quotes = sales.filter((s) => s.status === "quote");
+  const summary = data?.summary;
+  const matching = status === "all" ? (summary?.total ?? 0) : status === "quote" ? (summary?.quotes_count ?? 0) : status === "confirmed" ? (summary?.confirmed_count ?? 0) : null;
+  const revenue = summary?.revenue ?? 0;
+  const confirmedCount = summary?.confirmed_count ?? 0;
 
   const columns: Column<Sale>[] = [
     { key: "n", header: "Nº", cell: (s) => <span className="font-semibold">#{s.number}</span> },
@@ -89,19 +93,19 @@ function List() {
       {error && <ErrorNote message={error} onRetry={reload} />}
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Faturamento no período" value={money(revenue)} sub={`${confirmed.length} venda(s) confirmada(s)`} />
-        <Kpi label="Ticket médio" value={money(confirmed.length ? revenue / confirmed.length : 0)} hint="Valor médio de cada venda." />
-        <Kpi label="Orçamentos em aberto" value={String(quotes.length)} sub={money(quotes.reduce((s, x) => s + x.total, 0))} />
-        <Kpi label="A receber das vendas" value={money(confirmed.reduce((s, x) => s + (x.open ?? 0), 0))} tone={confirmed.some((x) => (x.overdue ?? 0) > 0) ? "warn" : undefined} />
+        <Kpi label="Faturamento no período" value={money(revenue)} sub={`${confirmedCount} venda(s) confirmada(s)`} />
+        <Kpi label="Ticket médio" value={money(confirmedCount ? revenue / confirmedCount : 0)} hint="Valor médio de cada venda." />
+        <Kpi label="Orçamentos em aberto" value={String(summary?.quotes_count ?? 0)} sub={money(summary?.quotes_value ?? 0)} />
+        <Kpi label="A receber das vendas" value={money(summary?.open ?? 0)} tone={(summary?.overdue ?? 0) > 0 ? "warn" : undefined} sub={(summary?.overdue ?? 0) > 0 ? `${money(summary!.overdue)} atrasado` : undefined} />
       </div>
 
       <Panel>
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <SearchBox value={q} onChange={setQ} placeholder="Buscar por cliente ou número…" className="w-full sm:max-w-xs sm:flex-1" />
-          <Chips label="Período" value={period} onChange={setPeriod} options={[{ value: "month", label: "Este mês" }, { value: "prev", label: "Mês passado" }, { value: "90", label: "90 dias" }, { value: "all", label: "Tudo" }]} />
+          <SearchBox value={q} onChange={(v) => { setQ(v); setLimit(100); }} placeholder="Buscar por cliente ou número…" className="w-full sm:max-w-xs sm:flex-1" />
+          <Chips label="Período" value={period} onChange={(v) => { setPeriod(v); setLimit(100); }} options={[{ value: "month", label: "Este mês" }, { value: "prev", label: "Mês passado" }, { value: "90", label: "90 dias" }, { value: "all", label: "Tudo" }]} />
         </div>
         <div className="mb-4">
-          <Chips label="Situação" value={status} onChange={setStatus} options={[{ value: "all", label: "Todas" }, { value: "quote", label: "Orçamentos" }, { value: "confirmed", label: "Confirmadas" }, { value: "canceled", label: "Canceladas" }]} />
+          <Chips label="Situação" value={status} onChange={(v) => { setStatus(v); setLimit(100); }} options={[{ value: "all", label: "Todas" }, { value: "quote", label: "Orçamentos" }, { value: "confirmed", label: "Confirmadas" }, { value: "canceled", label: "Canceladas" }]} />
         </div>
         {loading && !data ? (
           <LoadingRows />
@@ -114,7 +118,15 @@ function List() {
             </EmptyState>
           )
         ) : (
-          <SaleRows sales={sales} columns={columns} />
+          <>
+            <SaleRows sales={sales} columns={columns} />
+            {matching !== null && matching > sales.length && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                <span>Mostrando {sales.length} de {matching} venda(s).</span>
+                {limit < 2000 && <Button variant="outline" className="rounded-full" onClick={() => setLimit((n) => Math.min(n + 200, 2000))}>Mostrar mais</Button>}
+              </div>
+            )}
+          </>
         )}
       </Panel>
     </>

@@ -15,14 +15,16 @@ const SALE_COLS = `s.id, s.number, s.customer_id, p.name as customer_name, s.sta
   s.subtotal::float8 as subtotal, s.discount::float8 as discount, s.total::float8 as total, s.payment_method, s.notes,
   s.confirmed_at, s.channel`;
 
-export async function listSales(tenant: string, f: SaleFilter = {}): Promise<Sale[]> {
+// Filtro das vendas (período, cliente, busca e, se pedido, situação). Usado pela lista e pelos totais,
+// para os números do topo da tela serem sempre os do período inteiro e não só das linhas carregadas.
+function salesWhere(f: SaleFilter, withStatus: boolean) {
   const where = ["s.tenant = $1"];
   const params: unknown[] = [];
   const add = (sql: string, v: unknown) => {
     params.push(v);
     where.push(sql.replace("?", `$${params.length + 1}`));
   };
-  if (f.status && f.status !== "all") add("s.status = ?", f.status);
+  if (withStatus && f.status && f.status !== "all") add("s.status = ?", f.status);
   if (f.from) add("s.issue_date >= ?::date", f.from);
   if (f.to) add("s.issue_date <= ?::date", f.to);
   if (f.customerId) add("s.customer_id = ?", f.customerId);
@@ -30,7 +32,47 @@ export async function listSales(tenant: string, f: SaleFilter = {}): Promise<Sal
     params.push(`%${f.q.trim().toLowerCase()}%`);
     where.push(`(lower(p.name) like $${params.length + 1} or s.number::text = ltrim($${params.length + 1}, '%'))`);
   }
-  params.push(Math.min(f.limit ?? 300, 1000));
+  return { where: where.join(" and "), params };
+}
+
+export type SalesSummary = {
+  // vendas que batem com o período e a busca, qualquer situação
+  total: number;
+  confirmed_count: number;
+  revenue: number;
+  quotes_count: number;
+  quotes_value: number;
+  open: number;
+  overdue: number;
+};
+
+export async function salesSummary(tenant: string, f: SaleFilter = {}): Promise<SalesSummary> {
+  const { where, params } = salesWhere(f, false);
+  const [row] = await q<Omit<SalesSummary, "open" | "overdue">>(
+    tenant,
+    `select count(*)::int as total,
+       count(*) filter (where s.status = 'confirmed')::int as confirmed_count,
+       coalesce(sum(s.total) filter (where s.status = 'confirmed'), 0)::float8 as revenue,
+       count(*) filter (where s.status = 'quote')::int as quotes_count,
+       coalesce(sum(s.total) filter (where s.status = 'quote'), 0)::float8 as quotes_value
+     from erp_sales s left join erp_parties p on p.id = s.customer_id where ${where}`,
+    params
+  );
+  const [pay] = await q<{ open: number; overdue: number }>(
+    tenant,
+    `select coalesce(sum(t.amount), 0)::float8 as open,
+            coalesce(sum(t.amount) filter (where t.due_date < erp_today()), 0)::float8 as overdue
+       from erp_titles t join erp_sales s on s.id = t.origin_id
+       left join erp_parties p on p.id = s.customer_id
+      where t.tenant = $1 and t.origin_type = 'sale' and t.status = 'open' and s.status = 'confirmed' and ${where.replace("s.tenant = $1", "s.tenant = $1")}`,
+    params
+  );
+  return { ...row, ...pay };
+}
+
+export async function listSales(tenant: string, f: SaleFilter = {}): Promise<Sale[]> {
+  const { where, params } = salesWhere(f, true);
+  params.push(Math.min(f.limit ?? 100, 2000));
   return q<Sale>(
     tenant,
     `select ${SALE_COLS},
@@ -39,7 +81,7 @@ export async function listSales(tenant: string, f: SaleFilter = {}): Promise<Sal
        coalesce((select sum(t.amount) from erp_titles t where t.tenant = s.tenant and t.origin_type = 'sale' and t.origin_id = s.id and t.status = 'open'), 0)::float8 as open,
        coalesce((select sum(t.amount) from erp_titles t where t.tenant = s.tenant and t.origin_type = 'sale' and t.origin_id = s.id and t.status = 'open' and t.due_date < erp_today()), 0)::float8 as overdue
      from erp_sales s left join erp_parties p on p.id = s.customer_id
-     where ${where.join(" and ")}
+     where ${where}
      order by s.issue_date desc, s.number desc
      limit $${params.length + 1}`,
     params

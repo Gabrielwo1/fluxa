@@ -10,6 +10,7 @@ if (!process.env.DATABASE_URL && existsSync(".env.local")) {
 }
 const T = "teste-sync";
 const day = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+const back = (n: number) => new Date(Date.parse(`${day}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
 const iso = (d = day) => `${d}T15:00:00.000-03:00`;
 
 // ---- estado do mundo falso
@@ -93,7 +94,7 @@ async function main() {
 
   // --- 1ª rodada: tudo entra
   let reports = await syncTenant(T);
-  assert.deepEqual(reports.map((r) => [r.source, r.ok]), [["atendente", true], ["mercadolivre", true], ["loja", true]], JSON.stringify(reports));
+  assert.deepEqual(reports.map((r) => [r.source, r.ok]), [["atendente", true], ["loja", true], ["mercadolivre", true]], JSON.stringify(reports));
   assert.equal(await count("select count(*)::int as n from erp_parties where tenant = $1 and source = 'atendente'"), 2);
   assert.equal(await count("select count(*)::int as n from erp_sales where tenant = $1 and channel = 'whatsapp' and total = 480"), 1);
   assert.equal(await count("select count(*)::int as n from erp_sales where tenant = $1 and channel = 'mercadolivre' and total = 138.9"), 1);
@@ -110,6 +111,8 @@ async function main() {
   // --- estado e 2ª rodada: nada duplica, detalhes não são pedidos de novo
   const state = await syncStatus(T);
   assert.ok(state.every((s) => s.configured && s.synced_until === day && s.last_error === null), JSON.stringify(state));
+  // a primeira rodada traz o recente e em seguida o histórico até o limite (60 dias), sem buraco
+  assert.ok(state.every((s) => s.synced_from === back(60) && s.backfill_start === back(60)), JSON.stringify(state));
   const before = { ...world.calls };
   reports = await syncTenant(T);
   assert.ok(reports.every((r) => r.ok && r.created === 0), JSON.stringify(reports));
@@ -130,7 +133,7 @@ async function main() {
   world.loginOk = false;
   world.shopifyCancelled = null; world.shopifyStatus = "PAID";
   reports = await syncTenant(T);
-  assert.deepEqual(reports.map((r) => r.ok), [false, false, true]);
+  assert.deepEqual(reports.map((r) => r.ok), [false, true, false]); // atendente e Mercado Livre usam o mesmo login
   assert.match(reports[0].error ?? "", /login/);
   const bad = (await syncStatus(T)).find((s) => s.source === "atendente");
   assert.match(bad?.last_error ?? "", /login/);
@@ -148,6 +151,25 @@ async function main() {
   assert.equal(semCliente?.customer_id, null);
   assert.match((await syncStatus(T)).find((s) => s.source === "loja")?.last_error ?? "", /Aviso: A Shopify negou/);
   ok("Shopify sem acesso a dados pessoais: pedido entra sem cliente e a tela recebe o aviso");
+
+  // --- tempo curto: o recente entra primeiro e o histórico continua na rodada seguinte
+  for (const t of ["erp_sync_state"]) await q(T, `delete from ${t} where tenant = $1`);
+  const cut = await syncTenant(T, { sources: ["mercadolivre"], budgetMs: 1 });
+  assert.equal(cut[0].partial, true, JSON.stringify(cut));
+  let ml = (await syncStatus(T)).find((s) => s.source === "mercadolivre")!;
+  assert.deepEqual([ml.synced_from, ml.synced_until], [back(6), day]); // só a semana mais recente, contínua até hoje
+  const rest = await syncTenant(T, { sources: ["mercadolivre"] });
+  assert.equal(rest[0].partial, false, JSON.stringify(rest));
+  ml = (await syncStatus(T)).find((s) => s.source === "mercadolivre")!;
+  assert.deepEqual([ml.synced_from, ml.synced_until], [back(60), day]);
+  ok("tempo curto: o dia mais novo entra primeiro e a rodada seguinte completa o histórico");
+
+  // --- estado antigo (só synced_until, sem synced_from): a próxima rodada reabre o intervalo e chega a hoje
+  await q(T, "update erp_sync_state set synced_from = null, synced_until = $2 where tenant = $1 and source = 'mercadolivre'", [back(55)]);
+  await syncTenant(T, { sources: ["mercadolivre"] });
+  ml = (await syncStatus(T)).find((s) => s.source === "mercadolivre")!;
+  assert.ok(ml.synced_from! <= back(60) && ml.synced_until === day, JSON.stringify(ml)); // a releitura de 15 dias pode ir além do limite
+  ok("estado de versão anterior (sem synced_from) é refeito até hoje e até o limite do histórico");
 
   console.log(`\n${step} verificações ok`);
   server.close();
