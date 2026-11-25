@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "tsx scripts/erp-migrate.ts --if-configured && next build",
     "start": "next start",
     "lint": "eslint",
     "dev:motta": "LOCAL_CLIENT=motta next dev",

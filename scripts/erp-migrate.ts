@@ -1,5 +1,6 @@
 // Aplica db/migrations/*.sql no banco do ERP (DATABASE_URL), uma vez cada, em ordem.
 //   npm run erp:migrate
+//   --if-configured: sem DATABASE_URL (ex.: preview da Vercel) não faz nada em vez de falhar. Usado no build.
 import { readFileSync, readdirSync, existsSync } from "fs";
 import path from "path";
 import { Client } from "pg";
@@ -19,6 +20,10 @@ async function main() {
   loadEnv();
   const url = process.env.DATABASE_URL;
   if (!url) {
+    if (process.argv.includes("--if-configured")) {
+      console.log("Sem DATABASE_URL neste ambiente: migrações puladas.");
+      return;
+    }
     console.error("Defina DATABASE_URL (veja docs/ERP.md).");
     process.exit(1);
   }
