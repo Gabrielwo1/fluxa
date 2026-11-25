@@ -54,8 +54,8 @@ export async function createProduct(tenant: string, input: z.input<typeof produc
   const trackStock = v.kind === "service" ? false : v.track_stock;
   const id = await tx(tenant, async (t) => {
     const [row] = await t.q<{ id: string }>(
-      `insert into erp_products (tenant, sku, name, kind, unit, category, cost_price, sale_price, track_stock, min_stock, active, notes)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning id`,
+      `insert into erp_products (tenant, sku, name, kind, unit, category, cost_price, sale_price, track_stock, min_stock, active, notes, stock_since)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, case when $9 then erp_today() end) returning id`,
       [v.sku, v.name, v.kind, v.unit, v.category, v.cost_price, v.sale_price, trackStock, trackStock ? v.min_stock : 0, v.active, v.notes]
     );
     if (trackStock && v.initial_stock > 0) {
@@ -78,6 +78,7 @@ export async function updateProduct(tenant: string, id: string, input: z.input<t
   const rows = await q(
     tenant,
     `update erp_products set sku=$3, name=$4, kind=$5, unit=$6, category=$7, cost_price=$8, sale_price=$9,
+       stock_since = case when $10 and not track_stock then erp_today() when not $10 then null else stock_since end,
        track_stock=$10, min_stock=$11, active=$12, notes=$13, updated_at=now()
      where tenant = $1 and id = $2 returning id`,
     [id, v.sku, v.name, v.kind, v.unit, v.category, v.cost_price, v.sale_price, trackStock, trackStock ? v.min_stock : 0, v.active, v.notes]

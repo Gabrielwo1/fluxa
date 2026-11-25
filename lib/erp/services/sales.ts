@@ -205,7 +205,10 @@ export async function updateSale(tenant: string, id: string, input: z.input<type
   return getSale(tenant, id);
 }
 
-export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confirmSchema>) {
+// "fromChannel": venda que veio de uma integração (WhatsApp, loja, Mercado Livre). Ela já aconteceu: não pode ser
+// recusada por falta de saldo (o saldo fica negativo e a contagem precisa ser refeita) e, se for de antes de o
+// produto começar a ser controlado (stock_since), já estava na contagem e não baixa de novo.
+export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confirmSchema>, opts: { fromChannel?: boolean } = {}) {
   const sale = await t.one<{ status: string; number: number; customer_id: string | null; total: number; customer_name: string | null; issue_date: string }>(
     `select s.status, s.number, s.customer_id, s.total::float8 as total, p.name as customer_name, s.issue_date::text as issue_date
        from erp_sales s left join erp_parties p on p.id = s.customer_id
@@ -226,13 +229,13 @@ export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confir
   // estoque: confere o total por produto antes de mexer em qualquer coisa
   const perProduct = new Map<string, number>();
   for (const i of items) if (i.product_id) perProduct.set(i.product_id, (perProduct.get(i.product_id) ?? 0) + i.qty);
-  for (const [pid, qty] of perProduct) await assertCanRemove(t, pid, qty);
+  if (!opts.fromChannel) for (const [pid, qty] of perProduct) await assertCanRemove(t, pid, qty);
 
   let hasProduct = false;
   for (const i of items) {
     if (!i.product_id) continue;
-    const p = await t.one<{ cost_price: number; track_stock: boolean; kind: string }>(
-      "select cost_price::float8 as cost_price, track_stock, kind from erp_products where tenant = $1 and id = $2",
+    const p = await t.one<{ cost_price: number; track_stock: boolean; kind: string; stock_since: string | null }>(
+      "select cost_price::float8 as cost_price, track_stock, kind, stock_since::text as stock_since from erp_products where tenant = $1 and id = $2",
       [i.product_id]
     );
     if (!p) continue;
@@ -241,7 +244,8 @@ export async function confirmInTx(t: Tx, id: string, pay: z.output<typeof confir
       "update erp_sale_items set unit_cost = $3 where id = $2 and exists (select 1 from erp_sales where id = $4 and tenant = $1)",
       [i.id, p.cost_price, id]
     );
-    if (p.track_stock) {
+    const counted = !(opts.fromChannel && p.stock_since && sale.issue_date < p.stock_since);
+    if (p.track_stock && counted) {
       await addMove(t, {
         productId: i.product_id, qty: -i.qty, unitCost: p.cost_price, reason: "sale", refType: "sale", refId: id,
         note: `Venda #${sale.number}`,

@@ -337,12 +337,12 @@ async function createOrder(tenant: string, source: Source, o: Order, counts: Ing
       await confirmInTx(t, sale.id, {
         method: o.payment_method, installments: 1, first_due: issue, interval_days: 30, paid_now: true,
         account_id: await channelAccount(t, source),
-      });
+      }, { fromChannel: true });
     } else if (customerId) {
       // aguardando pagamento: vira conta a receber em aberto; sem cliente identificado fica como orçamento
       await confirmInTx(t, sale.id, {
         method: o.payment_method, installments: 1, first_due: issue, interval_days: 30, paid_now: false, account_id: null,
-      });
+      }, { fromChannel: true });
     }
     if (customerId && o.status !== "canceled") {
       await t.q("update erp_parties set status = 'active', updated_at = now() where tenant = $1 and id = $2 and status = 'lead'", [customerId]);
@@ -378,7 +378,7 @@ async function updateOrder(tenant: string, source: Source, saleId: string, o: Or
     const paidAt = o.paid_at ? brDay(o.paid_at) : cur.issue_date;
     if (cur.status === "quote") {
       await tx(tenant, (t) =>
-        confirmInTx(t, saleId, { method: o.payment_method, installments: 1, first_due: paidAt, interval_days: 30, paid_now: true, account_id: accountId })
+        confirmInTx(t, saleId, { method: o.payment_method, installments: 1, first_due: paidAt, interval_days: 30, paid_now: true, account_id: accountId }, { fromChannel: true })
       );
       changed = true;
     } else {

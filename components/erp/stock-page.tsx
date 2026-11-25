@@ -11,6 +11,7 @@ import { Chips, EmptyState, ErrorNote, Kpi, LoadingRows, PageHeader, SearchBox, 
 import { DataTable, type Column } from "@/components/erp/data-table";
 import { StockDialog } from "@/components/erp/stock-dialog";
 import { ErpGate } from "@/components/erp/gate";
+import { StockRelation } from "@/components/erp/stock-relation";
 
 const REASONS: Record<string, string> = {
   initial: "Estoque inicial",
@@ -28,7 +29,7 @@ export function StockPage() {
 }
 
 function Inner() {
-  const [tab, setTab] = useState<"balance" | "moves">("balance");
+  const [tab, setTab] = useState<"balance" | "moves" | "relation">("balance");
   const [q, setQ] = useState("");
   const [adjusting, setAdjusting] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
@@ -83,10 +84,12 @@ function Inner() {
       </div>
       <Panel>
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <Chips label="Visão" value={tab} onChange={setTab} options={[{ value: "balance", label: "Saldo atual" }, { value: "moves", label: "Movimentações" }]} />
+          <Chips label="Visão" value={tab} onChange={setTab} options={[{ value: "balance", label: "Saldo atual" }, { value: "relation", label: "Vendido × estoque" }, { value: "moves", label: "Movimentações" }]} />
           {tab === "balance" && <SearchBox value={q} onChange={setQ} placeholder="Buscar produto…" className="w-full sm:max-w-xs sm:flex-1" />}
         </div>
-        {tab === "balance" ? (
+        {tab === "relation" ? (
+          <StockRelation />
+        ) : tab === "balance" ? (
           products.loading && !products.data ? (
             <LoadingRows />
           ) : tracked.length === 0 ? (

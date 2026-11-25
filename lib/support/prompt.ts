@@ -12,7 +12,7 @@ const MAPA = `Onde fica cada coisa (menu lateral e menu superior):
 - Produtos e serviços (/produtos): preço de venda, custo, unidade, estoque mínimo e se controla estoque.
 - Conciliação (/conciliacao): cruza vendas, notas fiscais e o dinheiro que entrou no banco (Open Banking) em três linhas por dia; lista entradas que batem com contas a receber (dá a baixa), entradas sem venda e vendas sem nota.
 - Integrações (/integracoes): mostra o que chegou do atendente do WhatsApp, da loja virtual e do Mercado Livre (clientes, pedidos, notas) e se algum envio deu erro.
-- Estoque (/estoque): saldo, entradas, saídas, ajustes e perdas. O saldo é a soma dos movimentos.
+- Estoque (/estoque): saldo, entradas, saídas, ajustes e perdas. O saldo é a soma dos movimentos. A aba "Vendido × estoque" mostra, por produto, o que vendeu em cada canal, quantos dias o saldo dura e quanto repor; o botão Controlar liga o controle com a contagem de hoje.
 - Compras (/compras): lançar compra de fornecedor; ao "receber", o estoque sobe, o custo é atualizado e nascem as contas a pagar.
 - A receber (/receber) e A pagar (/pagar): uma linha por parcela; "dar baixa" registra o pagamento.
 - Fluxo de caixa (/fluxo-de-caixa): projeção do saldo. Caixas e contas (/caixas): onde o dinheiro está. Recorrências (/recorrencias): contas que se repetem todo mês.

@@ -126,7 +126,25 @@ com erro não derruba os outros** do mesmo envio.
 
 Venda confirmada não muda de itens ou valores (regra do ERP): só acompanha pagamento e cancelamento.
 
-## 3. Limites conhecidos
+## 3. Estoque: relação com tudo que foi vendido
+
+Em **Estoque → Vendido × estoque** cada produto aparece com o que já vendeu (no período e no total), **por canal**
+(Mercado Livre, loja, WhatsApp, balcão), o ritmo por dia, o saldo que o Fluxa controla, quantos dias ele dura e
+quanto comprar para cobrir 30 dias. Situações: Repor (acaba em até 7 dias ou abaixo do mínimo), Zerado, Contagem velha
+(saiu mais do que a contagem tinha), Parado (tem saldo e não vendeu) e Em dia.
+
+O produto que chega pelas integrações nasce **sem controle de estoque** (o saldo real continua na loja e no
+marketplace). Para controlar, clique em **Controlar** e informe quanto tem hoje:
+
+- a contagem vale **a partir de hoje** (`stock_since`): a partir daí cada venda baixa o saldo sozinha;
+- vendas de dias **anteriores**, que ainda estão chegando do histórico, não baixam (já estavam na contagem);
+- venda que vem de um canal **nunca é recusada** por falta de saldo (já aconteceu): o saldo fica negativo e o produto
+  aparece como "Contagem velha" até uma nova contagem em Ajustar. Venda lançada à mão continua exigindo saldo;
+- pedido cancelado no canal devolve o estoque.
+
+O Fluxa **não lê** o estoque do Mercado Livre nem da Shopify; o saldo vem da contagem + vendas.
+
+## 4. Limites conhecidos
 
 - **Testes**: a busca foi validada contra servidores simulados do atendente, da Shopify e do banco de acessos
   (`npx tsx scripts/sync-test.ts`), **não contra os sistemas reais** (faltam as credenciais). Os campos de comprador,
